@@ -26,9 +26,6 @@ button {
 .row {
     
 }
-.cell:hover {
-    background-color: #ddd;
-}
 .cell {
     float: left;
     height: 46px;
@@ -36,4 +33,19 @@ button {
     background-color: #aaa;
     border: 1px solid black;
     margin: 2px;
+}
+.cell.hoveredGreen {
+    background-color: greenyellow;
+}
+.cell.hoveredRed {
+    background-color: lightcoral;
+}
+.ship {
+    background-color: blue;
+}
+.cell.hit {
+    background-color: red;
+}
+.cell.miss {
+    background-color: white;
 }
