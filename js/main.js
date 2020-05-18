@@ -327,7 +327,6 @@ function getFiredOn() {
   } else {
     if (ai.hits[ai.hits.length - 1][0] === ai.hits[0][0]) {
       let hrz = findHorizontal();
-      if (ai.hits[ai.hits.length - 1][1] > )
     } else {
       console.log('vert');
     }
