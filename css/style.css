@@ -1,0 +1,39 @@
+* {
+    margin: 0;
+    box-sizing: border-box;
+}
+button {
+    display: block;
+    margin: 0 auto;
+}
+
+.userBoard.hidden,
+.aiBoard.hidden {
+    display: none;
+}
+
+.userBoard,
+.aiBoard {
+    margin: 0 auto;
+    height: 502px;
+    width: 502px;
+    border: 1px solid black;
+    overflow: hidden;
+}
+.aiBoard {
+    background-color: #aaa;
+}
+.row {
+    
+}
+.cell:hover {
+    background-color: #ddd;
+}
+.cell {
+    float: left;
+    height: 46px;
+    width: 46px;
+    background-color: #aaa;
+    border: 1px solid black;
+    margin: 2px;
+}
