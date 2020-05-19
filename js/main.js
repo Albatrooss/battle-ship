@@ -139,12 +139,14 @@ let pieces = [...ships];
 let ai = {
   guessesLeft: [...allCells],
   pieces: [...ships],
-  horizontal: true,
   guesses: [],
   hits: [],
-  rightMiss: false,
-  upMiss: false,
-  hitCounter: 0,
+  hrz: false,
+  neg: [],
+  pos: [],
+  posFirst: true,
+  firstDir: true,
+  total: 0,
 };
 let piecePlacer = {
   hoveredCells: [],
@@ -174,7 +176,6 @@ aiTurn.addEventListener('click', getFiredOn);
 
 flip.addEventListener('click', e => {
   pieces[0].horizontal ? (pieces[0].horizontal = false) : (pieces[0].horizontal = true);
-  console.log(pieces[0].horizontal);
   return;
 });
 toggle.addEventListener('click', e => {
@@ -309,40 +310,204 @@ function getFiredOn() {
   //fire on random cell
   let cell = '';
   let status = '';
-  if (ai.hitCounter === 0) {
+  if (ai.hits.length === 0) {
     cell = ai.guessesLeft[Math.floor(Math.random() * ai.guessesLeft.length)];
     status = checkHit(cell);
     if (status === 'hit') {
-      ai.hitCounter++;
       ai.hits.push(cell);
     }
-  } else if (ai.hitCounter === 1) {
+  } else if (ai.hits.length === 1) {
     let adjs = findAdjacentCells(ai.hits[0]);
     cell = adjs[Math.floor(Math.random() * adjs.length)];
     status = checkHit(cell);
     if (status === 'hit') {
-      ai.hitCounter++;
       ai.hits.push(cell);
+      setTimeout(initAiHits, 0);
     }
   } else {
-    if (ai.hits[ai.hits.length - 1][0] === ai.hits[0][0]) {
-      let hrz = findHorizontal();
+    if (ai.hits[0][0] === ai.hits[1][0]) {
+      //horizontal
+      cell = checkHrz();
+      status = checkHit(cell);
+      if (status === 'miss') {
+        if (ai.firstDir === false) aiReset();
+        ai.firstDir = false;
+      }
     } else {
-      console.log('vert');
+      //vertical
+      cell = checkVrt();
+      status = checkHit(cell);
+      if (status === 'miss') {
+        if (ai.firstDir === false) aiReset();
+        ai.firstDir = false;
+      }
     }
-  }
-  if (userGrid[cell[0]][cell[1]].size === ai.hitCounter) {
-    ai.hitCounter = 0;
   }
   let idx = ai.guessesLeft.findIndex(x => cell === x);
   ai.guessesLeft.splice(idx, 1);
   ai.guesses.push(cell);
+  ai.total += status === 'hit' ? 1 : 0;
   userGrid[cell[0]][cell[1]].status = status;
   renderCell(cell, status);
+  if (ai.total === 19) {
+    alert('You Lose');
+  }
 }
 
 function checkHit(cell) {
+  console.log('check cell: ' + cell);
   return userGrid[cell[0]][cell[1]].ship ? 'hit' : 'miss';
+}
+
+function initAiHits() {
+  let arr = [];
+  ai.hrz = ai.hits[0][0] === ai.hits[1][0] ? true : false;
+
+  if (ai.hrz) {
+    ai.posFirst = parseInt(ai.hits[1][1]) > parseInt(ai.hits[0][1]) ? true : false;
+    for (let i = 0; i < 10; i++) {
+      let xy = `${ai.hits[0][0]}${i}`;
+      arr.push(xy);
+    }
+    let mid = parseInt(ai.hits[0][1]);
+    let pos = arr.slice(mid + 1, 10);
+    let neg = arr.slice(0, mid);
+    ai.pos = pos.filter(x => ai.guessesLeft.includes(x));
+    ai.neg = neg.filter(x => ai.guessesLeft.includes(x)).reverse();
+  } else {
+    ai.posFirst = ai.hits[1][0].charCodeAt() > ai.hits[0][0].charCodeAt();
+    for (let i = 0; i < 10; i++) {
+      let xy = `${String.fromCharCode(97 + i)}${ai.hits[0][1]}`;
+      arr.push(xy);
+    }
+    let mid = ai.hits[0][0].charCodeAt() - 97;
+    let pos = arr.slice(mid + 1, 10);
+    let neg = arr.slice(0, mid);
+    ai.pos = pos.filter(x => ai.guessesLeft.includes(x));
+    ai.neg = neg.filter(x => ai.guessesLeft.includes(x)).reverse();
+  }
+}
+
+function checkVrt() {
+  let ans = '';
+  if (ai.pos.length === 0 && ai.neg.length === 0) {
+    aiReset();
+    return ai.guessesLeft[Math.floor(Math.random() * ai.guessesLeft.length)];
+  }
+  if (ai.posFirst) {
+    if (ai.firstDir && ai.pos.length > 0) {
+      goPos();
+    } else {
+      goNeg();
+    }
+  } else {
+    if (ai.firstDir && ai.neg.length > 0) {
+      goNeg();
+    } else {
+      goPos();
+    }
+  }
+  function goPos() {
+    let arr = ai.pos.filter(x => ai.guessesLeft.includes(x));
+    if (arr.length === 0) return goNeg();
+    ans = arr[0];
+    arr.shift();
+    ai.pos = arr;
+    if (ai.pos.length === 0) {
+      if (ai.firstDir) {
+        ai.firstDir = false;
+      } else {
+        aiReset();
+      }
+    }
+  }
+  function goNeg() {
+    let arr = ai.neg.filter(x => ai.guessesLeft.includes(x));
+    if (arr.length === 0) return goPos();
+    ans = arr[0];
+    arr.shift();
+    ai.neg = arr;
+    if (ai.neg.length === 0) {
+      if (ai.firstDir) {
+        ai.firstDir = false;
+      } else {
+        aiReset();
+      }
+    }
+  }
+  return ans;
+}
+
+function checkHrz() {
+  let ans = '';
+  if (ai.pos.length === 0 && ai.neg.length === 0) {
+    aiReset();
+    return ai.guessesLeft[Math.floor(Math.random() * ai.guessesLeft.length)];
+  }
+  if (ai.posFirst) {
+    if (ai.firstDir) {
+      goPos();
+    } else {
+      goNeg();
+    }
+  } else {
+    if (ai.firstDir) {
+      goNeg();
+    } else {
+      goPos();
+    }
+  }
+  function goPos() {
+    let arr = ai.pos.filter(x => ai.guessesLeft.includes(x));
+    if (arr.length === 0) {
+      if (ai.firstDir) {
+        ai.firstDir = false;
+        return checkHrz();
+      } else {
+        return ai.guessesLeft[Math.floor(Math.random() * ai.guessesLeft.length)];
+      }
+    }
+    ans = arr[0];
+    arr.shift();
+    ai.pos = arr;
+    if (ai.pos.length === 0) {
+      if (ai.firstDir) {
+        ai.firstDir = false;
+      } else {
+        aiReset();
+      }
+    }
+    return ans;
+  }
+  function goNeg() {
+    let arr = ai.neg.filter(x => ai.guessesLeft.includes(x));
+    if (arr.length === 0) {
+      if (ai.firstDir) {
+        ai.firstDir = false;
+        return checkHrz();
+      } else {
+        return ai.guessesLeft[Math.floor(Math.random() * ai.guessesLeft.length)];
+      }
+    }
+    ans = arr[0];
+    arr.shift();
+    ai.neg = arr;
+    if (ai.neg.length === 0) {
+      if (ai.firstDir) {
+        ai.firstDir = false;
+      } else {
+        aiReset();
+      }
+    }
+  }
+  return ans;
+}
+
+function aiReset() {
+  ai.hits = [];
+  ai.neg = [];
+  ai.pos = [];
+  console.log('reset', ai);
 }
 
 function findAdjacentCells(cell) {
@@ -370,3 +535,18 @@ function renderLoss() {}
 
 initGame();
 placeAiPieces();
+
+/*
+AI CODE
+
+first shot hit  
+  register starting point
+second shot UDLR
+  if miss try again
+  if hit register HOR/VERT
+third shot HOR/VER same dir
+  if allreadyshot turn around
+
+
+
+*/
