@@ -146,6 +146,10 @@ let ai = {
   cells: [],
   ships: [...ships],
   hp: 19,
+  hits: [],
+  horizontal: false,
+  startPostv: true,
+  firstDir: true,
 };
 
 //cached element refs
@@ -157,11 +161,13 @@ let aiGrid = [];
 
 let flipBtn = document.getElementById('horizontal-btn');
 let toggleBtn = document.getElementById('toggle');
+let aiBtn = document.getElementById('ai-fire');
 //event listeners
 toggleBtn.addEventListener('click', toggle);
 flipBtn.addEventListener('click', e => {
   user.horizontal = user.horizontal ? false : true;
 });
+aiBtn.addEventListener('click', aiFire);
 
 userBoard.addEventListener('click', placePiece);
 aiBoard.addEventListener('click', fire);
@@ -179,12 +185,14 @@ function initBoard(obj) {
     cell.className = 'cell';
     cell.id = i;
     if (obj === userBoard) {
-      user.cells.push({ revealed: false, contents: null });
-      userGrid.push(cell);
+      user.cells.push({ revealed: false, contents: null, id: i });
       cell.addEventListener('mouseenter', mouseEnter);
       cell.addEventListener('mouseleave', mouseLeave);
+      userGrid.push(cell);
     } else {
-      ai.cells.push({ revealed: false, contents: null });
+      cell.addEventListener('mouseenter', aiMouseEnter);
+      cell.addEventListener('mouseleave', aiMouseLeave);
+      ai.cells.push({ revealed: false, contents: null, id: i });
       aiGrid.push(cell);
     }
     obj.appendChild(cell);
@@ -241,10 +249,20 @@ function mouseLeave(target) {
   user.hovered = [];
 }
 
+function aiMouseEnter(e) {
+  if (!ai.cells[e.target.id].revealed) {
+    e.target.classList.add('ai-hover');
+  }
+}
+
+function aiMouseLeave(e) {
+  e.target.classList.remove('ai-hover');
+}
+
 function placePiece(e) {
   //updates userGrid to show where the pieces are
   //store the size of the ship in each cell
-  if (user.taken === 'hoveredGreen') {
+  if (user.taken === 'hoveredGreen' && user.hovered.length > 0) {
     user.hovered.forEach((cell, i) => {
       let ship = document.createElement('div');
       let cl = '';
@@ -275,9 +293,9 @@ function placePiece(e) {
         cell.removeEventListener('mouseenter', mouseEnter);
         cell.removeEventListener('mouseleave', mouseLeave);
       });
-      mouseLeave();
-      user.hovered = [];
     }
+    mouseLeave();
+    user.hovered = [];
   }
 }
 
@@ -394,13 +412,111 @@ function showAi() {
   });
 }
 
-function getFiredOn() {
+function aiFire() {
   // if last shot was first hit
   // fire random one u d l r
   // else if last shot was > 1 && < size
   // fire ranom in same direction
   //else
   //fire on random cell
+  var cell;
+  let options = [];
+  if (ai.hits.length === 0) {
+    cell = randomCell();
+  } else if (ai.hits.length === 1) {
+    options = adjacent(ai.hits[0]);
+    if (options.length > 0) {
+      cell = options[Math.floor(Math.random() * options.length)];
+      detectOrientation(cell);
+    } else {
+      cell = randomCell();
+      ai.hits = [];
+      ai.firstDir = true;
+    }
+  } else {
+    options = nextInDirection('first');
+    if (options.length === 0 || user.cells[options[0]].revealed) {
+      if (ai.firsDir) {
+        ai.hits = [ai.hits[0]];
+        options = nextInDirection('second');
+        if (options.length === 0 || user.cells[options[0]].revealed) {
+          ai.hits = [];
+          ai.firstDir = true;
+          options = [randomCell()];
+        }
+      } else {
+        ai.hits = [];
+        ai.firstDir = true;
+        options = [randomCell()];
+      }
+    }
+    cell = options[0];
+  }
+  user.cells[cell].revealed = true;
+  let piece = document.createElement('div');
+  let clss = '';
+  if (user.cells[cell].contents === 'ship') {
+    clss = 'hit';
+    ai.hits.push(cell);
+  } else {
+    clss = 'miss';
+    if (ai.hits.length > 1) {
+      ai.firstDir = false;
+      ai.hits = [ai.hits[0]];
+    }
+  }
+  piece.classList.add(clss);
+  userGrid[cell].appendChild(piece);
+}
+
+function randomCell() {
+  let cell = Math.floor(Math.random() * 100);
+  while (user.cells[cell].revealed) {
+    cell = Math.floor(Math.random() * 100);
+  }
+  return cell;
+}
+
+function detectOrientation(cell) {
+  if (cell % 10 === ai.hits[0] % 10) {
+    console.log('vertical');
+    ai.horizontal = false;
+  } else {
+    ai.horizontal = true;
+    console.log('horizontal');
+  }
+  if (cell > ai.hits[0]) {
+    ai.startPostv = true;
+  } else {
+    ai.startPostv = false;
+  }
+}
+
+function nextInDirection(direction) {
+  let num = ai.hits[ai.hits.length - 1];
+  let dir = direction === 'first' ? ai.startPostv : !ai.startPostv;
+  if (ai.horizontal) {
+    return dir ? [num + 1] : [num - 1];
+  } else {
+    return dir ? [num + 10] : [num - 1];
+  }
+}
+
+function adjacent(firstHit) {
+  let temp = [firstHit + 1, firstHit - 1, firstHit + 10, firstHit - 10];
+  let ans = [];
+  temp.forEach((x, i) => {
+    if (i < 2) {
+      if (Math.floor(x / 10) === Math.floor(firstHit / 10)) {
+        ans.push(x);
+      }
+    } else {
+      if (x % 10 === firstHit % 10) {
+        ans.push(x);
+      }
+    }
+  });
+  return ans.filter(x => x >= 0 && x < 100 && !user.cells[x].revealed);
 }
 
 function checkHit(cell) {}
@@ -412,7 +528,6 @@ function renderWin() {
 function renderLoss() {}
 
 initGame();
-console.log(user.cells);
 /*
 AI CODE
 

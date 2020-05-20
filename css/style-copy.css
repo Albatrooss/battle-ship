@@ -26,12 +26,20 @@ main {
     display: flex;
     justify-content: center;
     align-items: center;
+    position: relative;
+}
+.ai-hover {
+    background-color: salmon;
+    cursor: pointer;
 }
 .hit,
 .miss {
+    position: relative;
+    z-index: 2;
     width: 25px;
     height: 25px;
     border-radius: 50%;
+    border: 1px solid #333;
     background-color: red;
 }
 .miss {
@@ -49,6 +57,8 @@ main {
 
 .ship {
     background-color: cornflowerblue;
+    position: absolute;
+    z-index: 1;
 }
 .hor-start {
     height: 90%;
