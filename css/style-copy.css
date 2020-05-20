@@ -1,0 +1,80 @@
+* {
+    margin: 0;
+    box-sizing: border-box;
+}
+main {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.user-board,
+.ai-board {
+    display: grid;
+    grid-template: repeat(10, 1fr) / repeat(10, 1fr);
+    grid-gap: 1px;
+}
+.ai-board {
+    background-color: #aaa;
+}
+.hidden {
+    display: none;
+}
+.cell {
+    height: 50px;
+    width: 50px;
+    border: 1px solid black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.hit,
+.miss {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    background-color: red;
+}
+.miss {
+    background-color: white;
+}
+.hoveredGreen,
+.hoveredRed {
+    width: 100%;
+    height: 100%;
+    background-color: greenyellow;
+}
+.hoveredRed {
+    background-color: coral;
+}
+
+.ship {
+    background-color: cornflowerblue;
+}
+.hor-start {
+    height: 90%;
+    width: 100%;
+    border-radius: 50% 0 0 50%;
+}
+.hor-mid {
+    height: 90%;
+    width: 100%;
+}
+.hor-end {
+    height: 90%;
+    width: 100%;
+    border-radius: 0 50% 50% 0;
+}
+.ver-start {
+    border-radius: 50% 50% 0 0;
+    height: 100%;
+    width: 90%;
+}
+.ver-mid {
+    height: 100%;
+    width: 90%;
+}
+.ver-end {
+    border-radius: 0 0 50% 50%;
+    height: 100%;
+    width: 90%;
+}
