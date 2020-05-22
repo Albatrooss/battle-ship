@@ -24,7 +24,7 @@ main {
     width: 50px;
     border: 1px solid black;
     display: flex;
-    justify-content: center;
+    justify-content: space-around;
     align-items: center;
     position: relative;
 }
@@ -62,7 +62,8 @@ main {
 }
 .hor-start {
     height: 90%;
-    width: 100%;
+    width: 90%;
+    left: 11%;
     border-radius: 50% 0 0 50%;
 }
 .hor-mid {
@@ -71,12 +72,14 @@ main {
 }
 .hor-end {
     height: 90%;
-    width: 100%;
-    border-radius: 0 50% 50% 0;
+    width: 85%;
+    right: 15%;
+    border-radius: 0 25% 25% 0;
 }
 .ver-start {
-    border-radius: 50% 50% 0 0;
-    height: 100%;
+    border-radius: 100% 100% 0 0;
+    height: 90%;
+    align-self: flex-end;
     width: 90%;
 }
 .ver-mid {
@@ -84,7 +87,8 @@ main {
     width: 90%;
 }
 .ver-end {
-    border-radius: 0 0 50% 50%;
-    height: 100%;
+    border-radius: 0 0 40% 40%;
+    align-self: flex-start;
+    height: 85%;
     width: 90%;
 }

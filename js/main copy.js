@@ -1,4 +1,5 @@
 // constants
+
 const ships = [
   {
     size: 5,
@@ -31,110 +32,13 @@ const ships = [
     img: '',
   },
 ];
-const allCells = [
-  'a0',
-  'a1',
-  'a2',
-  'a3',
-  'a4',
-  'a5',
-  'a6',
-  'a7',
-  'a8',
-  'a9',
-  'b0',
-  'b1',
-  'b2',
-  'b3',
-  'b4',
-  'b5',
-  'b6',
-  'b7',
-  'b8',
-  'b9',
-  'c0',
-  'c1',
-  'c2',
-  'c3',
-  'c4',
-  'c5',
-  'c6',
-  'c7',
-  'c8',
-  'c9',
-  'd0',
-  'd1',
-  'd2',
-  'd3',
-  'd4',
-  'd5',
-  'd6',
-  'd7',
-  'd8',
-  'd9',
-  'e0',
-  'e1',
-  'e2',
-  'e3',
-  'e4',
-  'e5',
-  'e6',
-  'e7',
-  'e8',
-  'e9',
-  'f0',
-  'f1',
-  'f2',
-  'f3',
-  'f4',
-  'f5',
-  'f6',
-  'f7',
-  'f8',
-  'f9',
-  'g0',
-  'g1',
-  'g2',
-  'g3',
-  'g4',
-  'g5',
-  'g6',
-  'g7',
-  'g8',
-  'g9',
-  'h0',
-  'h1',
-  'h2',
-  'h3',
-  'h4',
-  'h5',
-  'h6',
-  'h7',
-  'h8',
-  'h9',
-  'i0',
-  'i1',
-  'i2',
-  'i3',
-  'i4',
-  'i5',
-  'i6',
-  'i7',
-  'i8',
-  'i9',
-  'j0',
-  'j1',
-  'j2',
-  'j3',
-  'j4',
-  'j5',
-  'j6',
-  'j7',
-  'j8',
-  'j9',
-];
 
 // app's state
+
+let game = {
+  myTurn: true,
+  aiTurn: false,
+};
 let user = {
   cells: [],
   ships: [...ships],
@@ -153,6 +57,7 @@ let ai = {
 };
 
 //cached element refs
+
 let userBoard = document.querySelector('.user-board');
 let aiBoard = document.querySelector('.ai-board');
 
@@ -162,16 +67,23 @@ let aiGrid = [];
 let flipBtn = document.getElementById('horizontal-btn');
 let toggleBtn = document.getElementById('toggle');
 let aiBtn = document.getElementById('ai-fire');
+
 //event listeners
+
 toggleBtn.addEventListener('click', toggle);
+
 flipBtn.addEventListener('click', e => {
   user.horizontal = user.horizontal ? false : true;
 });
+
 aiBtn.addEventListener('click', aiFire);
 
 userBoard.addEventListener('click', placePiece);
 aiBoard.addEventListener('click', fire);
+
 //functions
+
+//Game Start
 
 function initGame() {
   initBoard(userBoard);
@@ -216,8 +128,8 @@ function renderGrid(grid) {
   });
 }
 
+//Evemt Listener functions
 function toggle(e) {
-  if (e.target.id !== 'toggle') return;
   userBoard.classList.toggle('hidden');
   aiBoard.classList.toggle('hidden');
 }
@@ -309,6 +221,53 @@ function renderUserCells(cells) {
   });
 }
 
+// User functions
+
+function fire(e) {
+  //checks aiGrid
+  if (!game.myTurn) {
+    return;
+  }
+  let id = e.target.id;
+  if (!e.target.classList.value.split(' ').includes('cell')) return;
+  if (!ai.cells[id].revealed) {
+    if (ai.cells[id].contents === 'ship') {
+      //show hit on grid
+      ai.cells[id].contents = 'hit';
+      renderAiCell(id, 'hit');
+      ai.hp--;
+    } else {
+      //show miss
+      ai.cells[id].contents = 'miss';
+      renderAiCell(id, 'miss');
+      game.myTurn = false;
+      setTimeout(startAiTurn, 1000);
+    }
+    ai.cells[id].revealed = true;
+    if (ai.hp < 1) alert('you win!');
+  } else {
+    return;
+  }
+}
+
+function renderAiCell(cell, clss) {
+  let piece = document.createElement('div');
+  piece.className = clss;
+  aiGrid[cell].appendChild(piece);
+}
+
+function showAi() {
+  ai.cells.forEach((cell, i) => {
+    if (cell.contents === 'ship') {
+      let piece = document.createElement('div');
+      piece.classList.add('ship');
+      aiGrid[i].appendChild(piece);
+    }
+  });
+}
+
+// AI functions
+
 function aiPlaceShips() {
   //randomly places ai pieces
   ai.ships.forEach((ship, index) => {
@@ -370,48 +329,6 @@ function changeHorizontal() {
   pieces[0].horizontal ? (pieces[0].horizontal = false) : (pieces[0].horizontal = true);
 }
 
-function startGame() {
-  //once pieces ar placed shows aiBoard to pick a spot to fire on
-}
-
-function fire(e) {
-  //checks aiGrid
-  let id = e.target.id;
-  if (!e.target.classList.value.split(' ').includes('cell')) return;
-  if (!ai.cells[id].revealed) {
-    if (ai.cells[id].contents === 'ship') {
-      //show hit on grid
-      ai.cells[id].contents = 'hit';
-      renderAiCell(id, 'hit');
-      ai.hp--;
-    } else {
-      //show miss
-      ai.cells[id].contents = 'miss';
-      renderAiCell(id, 'miss');
-    }
-    ai.cells[id].revealed = true;
-    if (ai.hp < 1) alert('you win!');
-  } else {
-    return;
-  }
-}
-
-function renderAiCell(cell, clss) {
-  let piece = document.createElement('div');
-  piece.className = clss;
-  aiGrid[cell].appendChild(piece);
-}
-
-function showAi() {
-  ai.cells.forEach((cell, i) => {
-    if (cell.contents === 'ship') {
-      let piece = document.createElement('div');
-      piece.classList.add('ship');
-      aiGrid[i].appendChild(piece);
-    }
-  });
-}
-
 function aiFire() {
   // if last shot was first hit
   // fire random one u d l r
@@ -434,11 +351,11 @@ function aiFire() {
       ai.firstDir = true;
     }
   } else {
-    options = nextInDirection('first');
+    options = nextInDirection();
     if (options.length === 0 || user.cells[options[0]].revealed) {
       if (ai.firsDir) {
-        ai.hits = [ai.hits[0]];
-        options = nextInDirection('second');
+        ai.firstDir = false;
+        options = nextInDirection();
         if (options.length === 0 || user.cells[options[0]].revealed) {
           ai.hits = [];
           ai.firstDir = true;
@@ -457,13 +374,17 @@ function aiFire() {
   let clss = '';
   if (user.cells[cell].contents === 'ship') {
     clss = 'hit';
-    ai.hits.push(cell);
+    if (ai.firstDir) {
+      ai.hits.push(cell);
+    } else {
+      ai.hits.unshift(cell);
+    }
   } else {
     clss = 'miss';
     if (ai.hits.length > 1) {
       ai.firstDir = false;
-      ai.hits = [ai.hits[0]];
     }
+    game.aiTurn = false;
   }
   piece.classList.add(clss);
   userGrid[cell].appendChild(piece);
@@ -479,11 +400,9 @@ function randomCell() {
 
 function detectOrientation(cell) {
   if (cell % 10 === ai.hits[0] % 10) {
-    console.log('vertical');
     ai.horizontal = false;
   } else {
     ai.horizontal = true;
-    console.log('horizontal');
   }
   if (cell > ai.hits[0]) {
     ai.startPostv = true;
@@ -492,14 +411,16 @@ function detectOrientation(cell) {
   }
 }
 
-function nextInDirection(direction) {
-  let num = ai.hits[ai.hits.length - 1];
-  let dir = direction === 'first' ? ai.startPostv : !ai.startPostv;
+function nextInDirection() {
+  let ans = [];
+  let num = ai.firstDir ? ai.hits[ai.hits.length - 1] : ai.hits[0];
+  let dir = ai.firstDir ? ai.startPostv : !ai.startPostv;
   if (ai.horizontal) {
-    return dir ? [num + 1] : [num - 1];
+    ans = dir ? [num + 1] : [num - 1];
   } else {
-    return dir ? [num + 10] : [num - 1];
+    ans = dir ? [num + 10] : [num - 10];
   }
+  return ans.filter(x => x >= 0 && x < 100 && !user.cells[x].revealed);
 }
 
 function adjacent(firstHit) {
@@ -527,6 +448,40 @@ function renderWin() {
 
 function renderLoss() {}
 
+//turn controlloer
+
+function startAiTurn() {
+  toggle();
+  game.aiTurn = true;
+  aiMove();
+}
+
+function aiMove() {
+  aiLoopTest(19);
+}
+function aiLoopTest(counter) {
+  //  create a loop function
+  if (game.aiTurn) {
+    setTimeout(function () {
+      //  call a 3s setTimeout when the loop is called
+      aiFire(); //  your code here
+      counter--; //  increment the counter
+      if (counter < 19) {
+        //  if the counter < 10, call the loop function
+        aiLoopTest(counter); //  ..  again which will trigger another
+      } //  ..  setTimeout()
+    }, 1000);
+  } else {
+    setTimeout(endAiTurn, 1000);
+  }
+}
+
+function endAiTurn() {
+  game.myTurn = true;
+  toggle();
+}
+
+//Game start
 initGame();
 /*
 AI CODE
