@@ -46,7 +46,7 @@ nav {
 }
 .hit,
 .miss {
-    position: relative;
+    position: absolute;
     z-index: 2;
     width: 25px;
     height: 25px;
@@ -118,6 +118,26 @@ footer {
     z-index: 5;
 }
 .fly-over {
-    left: -20vw;
+    left: -100vw;
     transition: left 1s ease-in;
+}
+
+.test {
+    display: flex;
+    align-items: flex-end;
+}
+
+.cell img {
+    width: 100%;
+    float: left;
+}
+
+.explosion {
+    width: 100%;
+    opacity: .75;
+    position: absolute;
+    z-index: 5;
+}
+.fade-out {
+    opacity: 0;
 }

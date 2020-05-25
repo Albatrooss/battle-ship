@@ -1,0 +1,16 @@
+/*
+InfoPlist.strings
+ProductInstaller
+
+Created by SZ13031814M01 on 13/06/2019.
+Copyright © 2019 PE. All rights reserved.
+*/
+"PID" = "718";
+"Language" = "ko";
+"CFBundleName" = "Wondershare Filmora 설치 프로그랩";
+"CFBundleDisplayName" = "Wondershare Filmora 설치 프로그랩";
+"NSHumanReadableCopyright" = "Copyright © 2019 Wondershare. 모든 권리 보유.";
+"CustomerServiceURL" = "http://cbs.wondershare.com/go.php?pid=718&m=dc";
+"ProductPageURL" = "http://cbs.wondershare.com/go.php?pid=718&m=dp";
+"UserAgreementURL" = "http://pop.wondershare.com/license.html";
+"PrivacyPolicyURL" = "http://pop.wondershare.com/license.html";

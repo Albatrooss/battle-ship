@@ -54,12 +54,14 @@ let ai = {
   horizontal: false,
   startPostv: true,
   firstDir: true,
+  shots: [],
 };
 
 //cached element refs
 
 const userBoard = document.querySelector('.user-board');
 const aiBoard = document.querySelector('.ai-board');
+const mainEl = document.querySelector('main');
 
 let userGrid = [];
 let aiGrid = [];
@@ -175,26 +177,19 @@ function placePiece(e) {
   //store the size of the ship in each cell
   if (user.taken === 'hoveredGreen' && user.hovered.length > 0) {
     user.hovered.forEach((cell, i) => {
-      let ship = document.createElement('div');
-      let cl = '';
-      if (user.horizontal) {
-        if (i === 0) {
-          cl = 'hor-start ship';
-        } else if (i === user.hovered.length - 1) {
-          cl = 'hor-end ship';
-        } else {
-          cl = 'hor-mid ship';
-        }
+      let ship = document.createElement('img');
+      let shipPiece = '';
+      if (i === 0) {
+        shipPiece = 'front';
+      } else if (i === user.hovered.length - 1) {
+        shipPiece = 'end';
       } else {
-        if (i === 0) {
-          cl = 'ver-start ship';
-        } else if (i === user.hovered.length - 1) {
-          cl = 'ver-end ship';
-        } else {
-          cl = 'ver-mid ship';
-        }
+        shipPiece = `piece-${i + 1}`;
       }
-      ship.className = cl;
+      if (!user.horizontal) {
+        shipPiece = 'vert-' + shipPiece;
+      }
+      ship.src = `assets/ships/${shipPiece}.png`;
       userGrid[cell].appendChild(ship);
       user.cells[cell].contents = 'ship';
     });
@@ -344,26 +339,22 @@ function aiFire(e) {
   }
 
   user.cells[cell].revealed = true;
-  let piece = document.createElement('div');
-  let clss = '';
-
+  ai.shots.push(cell);
   if (user.cells[cell].contents === 'ship') {
-    clss = 'hit';
     if (ai.firstDir) {
       ai.hits.push(cell);
     } else {
       ai.hits.unshift(cell);
     }
+    aiFire();
   } else {
-    clss = 'miss';
     if (ai.hits.length > 1) {
       ai.firstDir = false;
     }
+    aiAnimateShots(cell);
+    flyBy(ai.shots[0]);
     game.aiTurn = false;
   }
-
-  piece.classList.add(clss);
-  userGrid[cell].appendChild(piece);
 }
 
 function aiPickTarget() {
@@ -465,22 +456,31 @@ function renderLoss() {}
 function startAiTurn() {
   toggle();
   game.aiTurn = true;
-  aiMove();
+  aiFire();
 }
 
 function aiMove() {
   aiLoopTest(19);
 }
-function aiLoopTest(counter) {
-  if (game.aiTurn) {
-    setTimeout(function () {
-      aiFire();
-      counter--;
-      if (counter < 19) {
-    }, 1000);
-  } else {
-    setTimeout(endAiTurn, 1000);
-  }
+function aiAnimateShots() {
+  if (ai.shots.length <= 0) return setTimeout(endAiTurn, 1000);
+  setTimeout(() => {
+    let where = userGrid[ai.shots[0]];
+    let piece = document.createElement('div');
+    let explosion = document.createElement('img');
+    explosion.src = 'assets/explosions/transparent-explosions-animated-gif-1.gif';
+    explosion.className = 'explosion';
+    let clss = ai.shots.length === 1 ? 'miss' : 'hit';
+    piece.classList.add(clss);
+    where.appendChild(piece);
+    where.appendChild(explosion);
+    setTimeout(() => explosion.classList.add('fade-out'), 600);
+    if (ai.shots.length === 3 || ai.shots.length === 6) {
+      setTimeout(() => flyBy(ai.shots[0]), 500);
+    }
+    ai.shots.shift();
+    return aiAnimateShots();
+  }, 500);
 }
 
 function endAiTurn() {
@@ -489,22 +489,28 @@ function endAiTurn() {
 }
 
 function flyBy(cell) {
+  console.log(cell);
+  let jet = document.createElement('img');
+  jet.className = 'jet';
+  jet.src = 'assets/Jet01.png';
+  mainEl.appendChild(jet);
   let top = 0;
   let row = Math.floor(cell / 10);
   if (row < 2) {
     top = 0;
   } else if (row < 4) {
-    top = 16;
+    top = 20;
   } else if (row < 6) {
-    top = 34;
+    top = 40;
   } else if (row < 8) {
-    top = 51;
-  } else if (row < 10) {
-    top = 67;
+    top = 60;
+  } else {
+    top = 80;
   }
-  jet.style.top = top + 'vh';
-  jet.classList.toggle('fly-over');
-  setTimeout(() => jet.classList.toggle('fly-over'), 2000);
+  console.log(top);
+  jet.style.top = top + '%';
+  setTimeout(() => jet.classList.toggle('fly-over'), 0);
+  setTimeout(() => mainEl.removeChild(jet), 2000);
 }
 
 //Game start

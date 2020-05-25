@@ -1,0 +1,16 @@
+/*
+InfoPlist.strings
+ProductInstaller
+
+Created by SZ13031814M01 on 13/06/2019.
+Copyright © 2019 PE. All rights reserved.
+*/
+"PID" = "718";
+"Language" = "de";
+"CFBundleName" = "Wondershare Filmora Installer";
+"CFBundleDisplayName" = "Wondershare Filmora Installer";
+"NSHumanReadableCopyright" = "Copyright © 2019 Wondershare.\nAlle Rechte vorbehalten.";
+"CustomerServiceURL" = "http://cbs.wondershare.com/go.php?pid=718&m=dc";
+"ProductPageURL" = "http://cbs.wondershare.com/go.php?pid=718&m=dp";
+"UserAgreementURL" = "http://pop.wondershare.de/license.html";
+"PrivacyPolicyURL" = "http://pop.wondershare.de/license.html";
