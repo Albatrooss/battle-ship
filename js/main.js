@@ -33,6 +33,14 @@ const ships = [
   },
 ];
 
+const sounds = {
+  jet: 'assets/sounds/fly-by-01.wav',
+  explosion: 'assets/sounds/explosion-01.mp3',
+  splash: 'assets/sounds/splash.wav',
+};
+const audioPlayer = new Audio();
+const explosionPlayer = new Audio();
+const splashPlayer = new Audio();
 // app's state
 
 let game = {
@@ -351,8 +359,8 @@ function aiFire(e) {
     if (ai.hits.length > 1) {
       ai.firstDir = false;
     }
-    aiAnimateShots(cell);
     flyBy(ai.shots[0]);
+    setTimeout(() => aiAnimateShots(cell), 1000);
     game.aiTurn = false;
   }
 }
@@ -474,9 +482,13 @@ function aiAnimateShots() {
     piece.classList.add(clss);
     where.appendChild(piece);
     where.appendChild(explosion);
+    clss === 'hit' ? playSound('explosion', explosionPlayer) : playSound('splash', splashPlayer);
     setTimeout(() => explosion.classList.add('fade-out'), 600);
     if (ai.shots.length === 3 || ai.shots.length === 6) {
-      setTimeout(() => flyBy(ai.shots[0]), 500);
+      setTimeout(() => {
+        console.log(ai.shots);
+        flyBy(ai.shots[0]);
+      }, 500);
     }
     ai.shots.shift();
     return aiAnimateShots();
@@ -489,7 +501,7 @@ function endAiTurn() {
 }
 
 function flyBy(cell) {
-  console.log(cell);
+  playSound('jet', audioPlayer);
   let jet = document.createElement('img');
   jet.className = 'jet';
   jet.src = 'assets/Jet01.png';
@@ -511,6 +523,13 @@ function flyBy(cell) {
   jet.style.top = top + '%';
   setTimeout(() => jet.classList.toggle('fly-over'), 0);
   setTimeout(() => mainEl.removeChild(jet), 2000);
+}
+
+/*-------- AUIO ------*/
+
+function playSound(name, source) {
+  source.src = sounds[name];
+  source.play();
 }
 
 //Game start
