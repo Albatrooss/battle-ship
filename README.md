@@ -21,7 +21,7 @@ This is a game I made for my first project of <strong>General Assembly</strong>'
 
 ## Getting Started
 Go to:<br>
-https://pages.git.generalassemb.ly/TimRobillard/BattleShip/ <br>
+https://albatrooss.github.io/battle-ship/ <br>
 to play!
 
 Spread out your ships, and sink the enemies ships before they get yours!!

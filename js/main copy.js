@@ -58,25 +58,21 @@ let ai = {
 
 //cached element refs
 
-let userBoard = document.querySelector('.user-board');
-let aiBoard = document.querySelector('.ai-board');
+const userBoard = document.querySelector('.user-board');
+const aiBoard = document.querySelector('.ai-board');
 
 let userGrid = [];
 let aiGrid = [];
 
-let flipBtn = document.getElementById('horizontal-btn');
-let toggleBtn = document.getElementById('toggle');
-let aiBtn = document.getElementById('ai-fire');
+const flipBtn = document.getElementById('horizontal-btn');
+const toggleBtn = document.getElementById('toggle');
+const aiBtn = document.getElementById('ai-fire');
 
 //event listeners
-
-toggleBtn.addEventListener('click', toggle);
 
 flipBtn.addEventListener('click', e => {
   user.horizontal = user.horizontal ? false : true;
 });
-
-aiBtn.addEventListener('click', aiFire);
 
 userBoard.addEventListener('click', placePiece);
 aiBoard.addEventListener('click', fire);
@@ -205,6 +201,7 @@ function placePiece(e) {
         cell.removeEventListener('mouseenter', mouseEnter);
         cell.removeEventListener('mouseleave', mouseLeave);
       });
+      toggle();
     }
     mouseLeave();
     user.hovered = [];
@@ -414,11 +411,11 @@ function detectOrientation(cell) {
 function nextInDirection() {
   let ans = [];
   let num = ai.firstDir ? ai.hits[ai.hits.length - 1] : ai.hits[0];
-  let dir = ai.firstDir ? ai.startPostv : !ai.startPostv;
+  let posDir = ai.firstDir ? ai.startPostv : !ai.startPostv;
   if (ai.horizontal) {
-    ans = dir ? [num + 1] : [num - 1];
+    ans = posDir ? [num + 1] : [num - 1];
   } else {
-    ans = dir ? [num + 10] : [num - 10];
+    ans = posDir ? [num + 10] : [num - 10];
   }
   return ans.filter(x => x >= 0 && x < 100 && !user.cells[x].revealed);
 }

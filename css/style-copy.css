@@ -2,10 +2,20 @@
     margin: 0;
     box-sizing: border-box;
 }
-main {
+body {
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
+    justify-content: flex-start;
+}
+main {
+    width: 100%;
+    display: flex;
+    justify-content: center;
     align-items: center;
+}
+nav {
+    align-self: center;
 }
 .user-board,
 .ai-board {
@@ -91,4 +101,9 @@ main {
     align-self: flex-start;
     height: 85%;
     width: 90%;
+}
+
+footer {
+    margin-top: auto;
+    align-self: center;
 }
