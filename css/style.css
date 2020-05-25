@@ -2,50 +2,122 @@
     margin: 0;
     box-sizing: border-box;
 }
-button {
-    display: block;
-    margin: 0 auto;
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
 }
-
-.userBoard.hidden,
-.aiBoard.hidden {
+main {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    position: relative;
+}
+nav {
+    align-self: center;
+}
+.user-board,
+.ai-board {
+    display: grid;
+    grid-template: repeat(10, 1fr) / repeat(10, 1fr);
+    grid-gap: 1px;
+}
+.ai-board {
+    background-color: #aaa;
+}
+.hidden {
     display: none;
 }
-
-.userBoard,
-.aiBoard {
-    margin: 0 auto;
-    height: 502px;
-    width: 502px;
-    border: 1px solid black;
-    overflow: hidden;
-}
-.aiBoard {
-    background-color: #aaa;
-}
-.row {
-    
-}
 .cell {
-    float: left;
-    height: 46px;
-    width: 46px;
-    background-color: #aaa;
+    height: 50px;
+    width: 50px;
     border: 1px solid black;
-    margin: 2px;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    position: relative;
 }
-.cell.hoveredGreen {
-    background-color: greenyellow;
+.ai-hover {
+    background-color: salmon;
+    cursor: pointer;
 }
-.cell.hoveredRed {
-    background-color: lightcoral;
-}
-.ship {
-    background-color: blue;
-}
-.cell.hit {
+.hit,
+.miss {
+    position: relative;
+    z-index: 2;
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    border: 1px solid #333;
     background-color: red;
 }
-.cell.miss {
+.miss {
     background-color: white;
+}
+.hoveredGreen,
+.hoveredRed {
+    width: 100%;
+    height: 100%;
+    background-color: greenyellow;
+}
+.hoveredRed {
+    background-color: coral;
+}
+
+.ship {
+    background-color: cornflowerblue;
+    position: absolute;
+    z-index: 1;
+}
+.hor-start {
+    height: 90%;
+    width: 90%;
+    left: 11%;
+    border-radius: 50% 0 0 50%;
+}
+.hor-mid {
+    height: 90%;
+    width: 100%;
+}
+.hor-end {
+    height: 90%;
+    width: 85%;
+    right: 15%;
+    border-radius: 0 25% 25% 0;
+}
+.ver-start {
+    border-radius: 100% 100% 0 0;
+    height: 90%;
+    align-self: flex-end;
+    width: 90%;
+}
+.ver-mid {
+    height: 100%;
+    width: 90%;
+}
+.ver-end {
+    border-radius: 0 0 40% 40%;
+    align-self: flex-start;
+    height: 85%;
+    width: 90%;
+}
+
+footer {
+    margin-top: auto;
+    align-self: center;
+}
+
+.jet {
+    height: 20vh;
+    position: absolute;
+    top: 50vh;
+    left: 120vw;
+    z-index: 5;
+}
+.fly-over {
+    left: -20vw;
+    transition: left 1s ease-in;
 }

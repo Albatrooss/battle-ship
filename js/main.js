@@ -1,4 +1,5 @@
 // constants
+
 const ships = [
   {
     size: 5,
@@ -31,289 +32,296 @@ const ships = [
     img: '',
   },
 ];
-const allCells = [
-  'a0',
-  'a1',
-  'a2',
-  'a3',
-  'a4',
-  'a5',
-  'a6',
-  'a7',
-  'a8',
-  'a9',
-  'b0',
-  'b1',
-  'b2',
-  'b3',
-  'b4',
-  'b5',
-  'b6',
-  'b7',
-  'b8',
-  'b9',
-  'c0',
-  'c1',
-  'c2',
-  'c3',
-  'c4',
-  'c5',
-  'c6',
-  'c7',
-  'c8',
-  'c9',
-  'd0',
-  'd1',
-  'd2',
-  'd3',
-  'd4',
-  'd5',
-  'd6',
-  'd7',
-  'd8',
-  'd9',
-  'e0',
-  'e1',
-  'e2',
-  'e3',
-  'e4',
-  'e5',
-  'e6',
-  'e7',
-  'e8',
-  'e9',
-  'f0',
-  'f1',
-  'f2',
-  'f3',
-  'f4',
-  'f5',
-  'f6',
-  'f7',
-  'f8',
-  'f9',
-  'g0',
-  'g1',
-  'g2',
-  'g3',
-  'g4',
-  'g5',
-  'g6',
-  'g7',
-  'g8',
-  'g9',
-  'h0',
-  'h1',
-  'h2',
-  'h3',
-  'h4',
-  'h5',
-  'h6',
-  'h7',
-  'h8',
-  'h9',
-  'i0',
-  'i1',
-  'i2',
-  'i3',
-  'i4',
-  'i5',
-  'i6',
-  'i7',
-  'i8',
-  'i9',
-  'j0',
-  'j1',
-  'j2',
-  'j3',
-  'j4',
-  'j5',
-  'j6',
-  'j7',
-  'j8',
-  'j9',
-];
 
 // app's state
-let pieces = [...ships];
-let ai = {
-  guessesLeft: [...allCells],
-  pieces: [...ships],
-  guesses: [],
-  hits: [],
-  hrz: false,
-  neg: [],
-  pos: [],
-  posFirst: true,
-  firstDir: true,
-  total: 0,
-};
-let piecePlacer = {
-  hoveredCells: [],
-  cellsCovered: [],
-  canPlace: true,
-  cellsCoveredEl: [],
-  cellTaken: false,
-  allPlaced: false,
-};
 
-let userGrid = { a: [], b: [], c: [], d: [], e: [], f: [], g: [], h: [], i: [], j: [], boats: 19 };
-let aiGrid = { a: [], b: [], c: [], d: [], e: [], f: [], g: [], h: [], i: [], j: [], boats: 19 };
-let lastAiShot = { hits: 0, cell: '' };
-let myturn = true;
+let game = {
+  myTurn: true,
+  aiTurn: false,
+};
+let user = {
+  cells: [],
+  ships: [...ships],
+  horizontal: true,
+  hovered: [],
+  taken: '',
+};
+let ai = {
+  cells: [],
+  ships: [...ships],
+  hp: 19,
+  hits: [],
+  horizontal: false,
+  startPostv: true,
+  firstDir: true,
+};
 
 //cached element refs
-let toggle = document.getElementById('toggle');
-let aiTurn = document.getElementById('aiFire');
-let flip = document.getElementById('horizontalBtn');
-let userBoard = document.querySelector('.userBoard');
-let userRows = document.querySelectorAll('.userBoard > .row');
-let aiBoard = document.querySelector('.aiBoard');
-let aiRows = document.querySelectorAll('.aiBoard > .row');
-var userCells = [];
-var aiCells = [];
+
+const userBoard = document.querySelector('.user-board');
+const aiBoard = document.querySelector('.ai-board');
+
+let userGrid = [];
+let aiGrid = [];
+
+const flipBtn = document.getElementById('horizontal-btn');
+const toggleBtn = document.getElementById('toggle');
+const aiBtn = document.getElementById('ai-fire');
+
+const jet = document.querySelector('.jet');
 
 //event listeners
 
-aiTurn.addEventListener('click', getFiredOn);
-
-flip.addEventListener('click', e => {
+flipBtn.addEventListener('click', e => {
   user.horizontal = user.horizontal ? false : true;
-  return;
 });
-toggle.addEventListener('click', e => {
-  userBoard.classList.toggle('hidden');
-  aiBoard.classList.toggle('hidden');
-});
+
+userBoard.addEventListener('click', placePiece);
+aiBoard.addEventListener('click', fire);
+aiBtn.addEventListener('click', aiFire);
+
 //functions
 
+//Game Start
+
 function initGame() {
-  initBoard(userGrid, userRows);
-  initBoard(aiGrid, aiRows);
+  initBoard(userBoard);
+  initBoard(aiBoard);
+  aiPlaceShips();
 }
 
-function initBoard(obj, el) {
-  el.forEach((a, idx) => {
-    for (let i = 0; i <= 9; i++) {
-      let row = String.fromCharCode(idx + 97);
-      let c = document.createElement('div');
-      c.className = 'cell';
-      let id = row + i;
-      c.id = id;
-      c.addEventListener('click', e => {
-        placePiece(e);
-      });
-      c.addEventListener('mouseenter', e => mouseEnter(e.target));
-      c.addEventListener('mouseleave', e => mouseLeave(e.target));
-      a.appendChild(c);
-      if (el === userRows) {
-        userCells.push(c);
-      } else {
-        aiCells.push(c);
-      }
+function initBoard(obj) {
+  for (let i = 0; i < 100; i++) {
+    let cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.id = i;
+    if (obj === userBoard) {
+      user.cells.push({ revealed: false, contents: null, id: i });
+      cell.addEventListener('mouseenter', mouseEnter);
+      cell.addEventListener('mouseleave', mouseLeave);
+      userGrid.push(cell);
+    } else {
+      cell.addEventListener('mouseenter', aiMouseEnter);
+      cell.addEventListener('mouseleave', aiMouseLeave);
+      ai.cells.push({ revealed: false, contents: null, id: i });
+      aiGrid.push(cell);
+    }
+    obj.appendChild(cell);
+  }
+}
 
-      //update size depending on the ship
-      obj[row].push({ status: null, shipSize: undefined });
+function renderGrid(grid) {
+  grid.forEach((cell, i) => {
+    let piece = document.createElement('div');
+    if (grid === aiGrid) {
+      if (ai.cells[i].contents !== null) {
+        piece.className = ai.cells[i].contents;
+        cell.appendChild(piece);
+      }
+    } else {
+      if (user.cells[i] !== null) {
+        piece.className = ai.cells[i].contents;
+        cell.appendChild(piece);
+      }
     }
   });
 }
 
-function mouseEnter(target) {
-  let cellsCovered = [];
-  if (!piecePlacer.allPlaced) {
-    piecePlacer.cellsCovered = [];
-    for (let i = 0; i < pieces[0].size; i++) {
-      let nextCell = '';
-      if (user.horizontal) {
-        nextCell = `${target.id[0]}${parseInt(target.id[1]) + i}`;
-        cellsCovered.push(nextCell);
-      } else {
-        nextCell = `${String.fromCharCode(target.id[0].charCodeAt() + i)}${target.id[1]}`;
-        console.log(nextCell);
-        cellsCovered.push(nextCell);
-      }
-    }
-    let tempPlace = true;
-    cellsCovered.forEach(cell => {
-      if ('abcdefghif'.includes(cell[0]) && '0123456789'.includes(cell[1])) {
-        if ((userGrid[cell[0]][cell[1]].status = 'ship')) {
-          tempPlace = false;
-        }
-      } else {
-        tempPlace = false;
-      }
-    });
-    piecePlacer.canPlace = tempPlace;
-    if (piecePlacer.canPlace) {
-      cellsCovered.forEach(cell => {
-        if (userGrid[cell[0]][cell[1]].status !== 'ship')
-          userGrid[cell[0]][cell[1]].status = 'hoverGreen';
-      });
-    } else {
-      cellsCovered.forEach(cell => {
-        if (userGrid[cell[0]][cell[1]].status !== 'ship')
-          userGrid[cell[0]][cell[1]].status = 'hoverRed';
-      });
-    }
-    ai.cellsCovered = cellsCovered;
-    renderUserGrid();
-    // cellsCovered.forEach(cell => {
-    //   if ('abcdefghij'.includes(cell[0])) {
-    //     if (userGrid[cell[0]][cell[1]].ship) {
-    //       piecePlacer.cellTaken = true;
-    //     } else {
-    //       piecePlacer.cellTaken = false;
-    //     }
-    //   }
-    // });
-    // cellsCoveredEls = userCells.filter(x => cellsCovered.includes(x.id));
-    // if (cellsCoveredEls.length === pieces[0].size && !piecePlacer.cellTaken) {
-    //   cellsCoveredEls.forEach(x => x.classList.add('hoveredGreen'));
-    // } else {
-    //   cellsCoveredEls.forEach(x => x.classList.add('hoveredRed'));
-    // }
-    // hoveredCells = cellsCovered;
-  }
+//Evemt Listener functions
+function toggle(e) {
+  userBoard.classList.toggle('hidden');
+  aiBoard.classList.toggle('hidden');
+}
+
+function mouseEnter(e) {
   //if target is far enough away from edge for piece to fit, toogle good class
   //else toggle bad class
+  if (user.horizontal) {
+    for (let i = 0; i < user.ships[0].size; i++) {
+      user.hovered.push(parseInt(e.target.id) + i);
+    }
+  } else {
+    for (let i = 0; i < user.ships[0].size; i++) {
+      user.hovered.push(parseInt(e.target.id) + i * 10);
+    }
+  }
+  user.taken = checkTaken(user.hovered, user) ? 'hoveredRed' : 'hoveredGreen';
+  renderUserCells(user.hovered);
 }
 
 function mouseLeave(target) {
-  userCells.forEach(cell => {
-    if (userGrid[cell.id[0]][cell.id[1]].status !== 'ship') {
-      cell.classList.remove('hoverGreen');
-      cell.classList.remove('hoverRed');
-    }
-  });
-
-  // cellsCoveredEls.forEach(x => {
-  //   x.classList.remove('hoveredRed');
-  //   x.classList.remove('hoveredGreen');
-  // });
   //if target is far enough away from edge for piece to fit, toogle good class
   //else toggle bad class
+  let temp = user.hovered.filter(c => c < 100);
+  temp.forEach(cell => {
+    userGrid[cell].classList.remove('hoveredGreen');
+    userGrid[cell].classList.remove('hoveredRed');
+  });
+  user.hovered = [];
+}
+
+function aiMouseEnter(e) {
+  if (!ai.cells[e.target.id].revealed) {
+    e.target.classList.add('ai-hover');
+  }
+}
+
+function aiMouseLeave(e) {
+  e.target.classList.remove('ai-hover');
 }
 
 function placePiece(e) {
-  if (piecePlacer.cellTaken) return;
-  if (cellsCoveredEls.length === pieces[0].size) {
-    cellsCoveredEls.forEach(cell => {
-      cell.classList.add('ship');
-      userGrid[cell.id[0]][cell.id[1]].ship = true;
-    });
-    pieces.shift();
-    piecePlacer.cellTaken = false;
-  }
-  if (pieces.length <= 0) piecePlacer.allPlaced = true;
   //updates userGrid to show where the pieces are
   //store the size of the ship in each cell
+  if (user.taken === 'hoveredGreen' && user.hovered.length > 0) {
+    user.hovered.forEach((cell, i) => {
+      let ship = document.createElement('div');
+      let cl = '';
+      if (user.horizontal) {
+        if (i === 0) {
+          cl = 'hor-start ship';
+        } else if (i === user.hovered.length - 1) {
+          cl = 'hor-end ship';
+        } else {
+          cl = 'hor-mid ship';
+        }
+      } else {
+        if (i === 0) {
+          cl = 'ver-start ship';
+        } else if (i === user.hovered.length - 1) {
+          cl = 'ver-end ship';
+        } else {
+          cl = 'ver-mid ship';
+        }
+      }
+      ship.className = cl;
+      userGrid[cell].appendChild(ship);
+      user.cells[cell].contents = 'ship';
+    });
+    user.ships.shift();
+    if (user.ships.length === 0) {
+      userGrid.forEach(cell => {
+        cell.removeEventListener('mouseenter', mouseEnter);
+        cell.removeEventListener('mouseleave', mouseLeave);
+      });
+      toggle();
+    }
+    mouseLeave();
+    user.hovered = [];
+  }
 }
 
-function placeAiPieces() {
-  //randomly places ai pieces
-  ai.pieces.forEach(piece => {
-    let availablePlaces = [];
+function renderUserCells(cells) {
+  let newCells = cells.filter(c => c < 100);
+  if (newCells.length !== cells.length) {
+    user.taken = 'hoveredRed';
+  }
+  newCells.forEach(cell => {
+    userGrid[cell].classList.add(user.taken);
   });
+}
+
+// User functions
+
+function fire(e) {
+  //checks aiGrid
+  if (!game.myTurn) {
+    return;
+  }
+  let id = e.target.id;
+  if (!e.target.classList.value.split(' ').includes('cell')) return;
+  if (!ai.cells[id].revealed) {
+    if (ai.cells[id].contents === 'ship') {
+      //show hit on grid
+      ai.cells[id].contents = 'hit';
+      renderAiCell(id, 'hit');
+      ai.hp--;
+    } else {
+      //show miss
+      ai.cells[id].contents = 'miss';
+      renderAiCell(id, 'miss');
+      game.myTurn = false;
+      setTimeout(startAiTurn, 1000);
+    }
+    ai.cells[id].revealed = true;
+    if (ai.hp < 1) alert('you win!');
+  } else {
+    return;
+  }
+}
+
+function renderAiCell(cell, clss) {
+  let piece = document.createElement('div');
+  piece.className = clss;
+  aiGrid[cell].appendChild(piece);
+}
+
+function showAi() {
+  ai.cells.forEach((cell, i) => {
+    if (cell.contents === 'ship') {
+      let piece = document.createElement('div');
+      piece.classList.add('ship');
+      aiGrid[i].appendChild(piece);
+    }
+  });
+}
+
+// AI functions
+
+function aiPlaceShips() {
+  //randomly places ai pieces
+  ai.ships.forEach((ship, index) => {
+    let cells = [];
+    cells = randomRoot(ship);
+    let taken = checkTaken(cells, ai);
+    while (taken) {
+      cells = randomRoot(ship);
+      taken = checkTaken(cells, ai);
+    }
+    cells.forEach(c => {
+      if (ai.cells[c].contents !== null) {
+      } else {
+        cells.forEach(c => {
+          ai.cells[c].contents = 'ship';
+        });
+        ships.shift();
+      }
+    });
+  });
+  function randomRoot(s) {
+    let temp = [];
+    let horizontal = Math.random() > 0.5 ? true : false;
+    let root = Math.floor(Math.random() * 100);
+    if (horizontal) {
+      for (let i = 0; i < s.size; i++) {
+        temp.push(root + i);
+      }
+    } else {
+      for (let i = 0; i < s.size; i++) {
+        temp.push(root + i * 10);
+      }
+    }
+    return temp;
+  }
+}
+
+function checkTaken(cs, who) {
+  let noGood = false;
+  if (
+    cs[0] % 10 !== cs[cs.length - 1] % 10 &&
+    Math.floor(cs[0] / 10) !== Math.floor(cs[cs.length - 1] / 10)
+  ) {
+    noGood = true;
+  }
+  cs.forEach(c => {
+    if (c > 99 || who.cells[c].contents !== null) {
+      noGood = true;
+    }
+  });
+  if (noGood) {
+    return true;
+  }
+  return false;
 }
 
 function changeHorizontal() {
@@ -321,257 +329,129 @@ function changeHorizontal() {
   pieces[0].horizontal ? (pieces[0].horizontal = false) : (pieces[0].horizontal = true);
 }
 
-function renderUserGrid() {
-  userCells.forEach(cell => {
-    if (userGrid[cell.id[0]][cell.id[1]].status) {
-      cell.classList.add(userGrid[cell.id[0]][cell.id[1]].status);
-    }
-  });
-}
-
-function startGame() {
-  //once pieces ar placed shows aiBoard to pick a spot to fire on
-}
-
-function fire(cell, grid) {
-  //checks aiGrid
-
-  if (aiGrid[cell].ship) {
-    //show hit on grid
-  } else {
-    //show miss on grid
-  }
-  renderCell(cell);
-  if (aiGrid.boats < 1) {
-    renderWin();
-  }
-  myturn = myturn ? false : true;
-}
-
-function getFiredOn() {
+function aiFire(e) {
   // if last shot was first hit
   // fire random one u d l r
   // else if last shot was > 1 && < size
   // fire ranom in same direction
   //else
   //fire on random cell
-  let cell = '';
-  let status = '';
+  let cell = aiPickTarget();
+
+  //for debugging
+  if (typeof e === 'number') {
+    cell = e;
+  }
+
+  user.cells[cell].revealed = true;
+  let piece = document.createElement('div');
+  let clss = '';
+
+  if (user.cells[cell].contents === 'ship') {
+    clss = 'hit';
+    if (ai.firstDir) {
+      ai.hits.push(cell);
+    } else {
+      ai.hits.unshift(cell);
+    }
+  } else {
+    clss = 'miss';
+    if (ai.hits.length > 1) {
+      ai.firstDir = false;
+    }
+    game.aiTurn = false;
+  }
+
+  piece.classList.add(clss);
+  userGrid[cell].appendChild(piece);
+}
+
+function aiPickTarget() {
+  let options = [];
   if (ai.hits.length === 0) {
-    cell = ai.guessesLeft[Math.floor(Math.random() * ai.guessesLeft.length)];
-    status = checkHit(cell);
-    if (status === 'hit') {
-      ai.hits.push(cell);
-    }
+    return randomCell();
   } else if (ai.hits.length === 1) {
-    let adjs = findAdjacentCells(ai.hits[0]);
-    cell = adjs[Math.floor(Math.random() * adjs.length)];
-    status = checkHit(cell);
-    if (status === 'hit') {
-      ai.hits.push(cell);
-      setTimeout(initAiHits, 0);
+    options = adjacent(ai.hits[0]);
+    if (options.length > 0) {
+      let cell = options[Math.floor(Math.random() * options.length)];
+      detectOrientation(cell);
+      return cell;
+    } else {
+      ai.hits = [];
+      ai.firstDir = true;
+      return randomCell();
     }
   } else {
-    if (ai.hits[0][0] === ai.hits[1][0]) {
-      //horizontal
-      cell = checkHrz();
-      status = checkHit(cell);
-      if (status === 'miss') {
-        if (ai.firstDir === false) aiReset();
+    options = nextInDirection();
+    if (options.length === 0 || user.cells[options[0]].revealed) {
+      if (ai.firstDir) {
         ai.firstDir = false;
-      }
-    } else {
-      //vertical
-      cell = checkVrt();
-      status = checkHit(cell);
-      if (status === 'miss') {
-        if (ai.firstDir === false) aiReset();
-        ai.firstDir = false;
+        options = nextInDirection();
+        if (options.length === 0 || user.cells[options[0]].revealed) {
+          ai.hits = [];
+          ai.firstDir = true;
+          options = [randomCell()];
+        }
+      } else {
+        ai.hits = [];
+        ai.firstDir = true;
+        options = [randomCell()];
       }
     }
-  }
-  let idx = ai.guessesLeft.findIndex(x => cell === x);
-  ai.guessesLeft.splice(idx, 1);
-  ai.guesses.push(cell);
-  ai.total += status === 'hit' ? 1 : 0;
-  userGrid[cell[0]][cell[1]].status = status;
-  renderCell(cell, status);
-  if (ai.total === 19) {
-    alert('You Lose');
+    return options[0];
   }
 }
 
-function checkHit(cell) {
-  console.log('check cell: ' + cell);
-  return userGrid[cell[0]][cell[1]].ship ? 'hit' : 'miss';
+function randomCell() {
+  let cell = Math.floor(Math.random() * 100);
+  while (user.cells[cell].revealed) {
+    cell = Math.floor(Math.random() * 100);
+  }
+  return cell;
 }
 
-function initAiHits() {
-  let arr = [];
-  ai.hrz = ai.hits[0][0] === ai.hits[1][0] ? true : false;
-
-  if (ai.hrz) {
-    ai.posFirst = parseInt(ai.hits[1][1]) > parseInt(ai.hits[0][1]) ? true : false;
-    for (let i = 0; i < 10; i++) {
-      let xy = `${ai.hits[0][0]}${i}`;
-      arr.push(xy);
-    }
-    let mid = parseInt(ai.hits[0][1]);
-    let pos = arr.slice(mid + 1, 10);
-    let neg = arr.slice(0, mid);
-    ai.pos = pos.filter(x => ai.guessesLeft.includes(x));
-    ai.neg = neg.filter(x => ai.guessesLeft.includes(x)).reverse();
+function detectOrientation(cell) {
+  if (cell % 10 === ai.hits[0] % 10) {
+    ai.horizontal = false;
   } else {
-    ai.posFirst = ai.hits[1][0].charCodeAt() > ai.hits[0][0].charCodeAt();
-    for (let i = 0; i < 10; i++) {
-      let xy = `${String.fromCharCode(97 + i)}${ai.hits[0][1]}`;
-      arr.push(xy);
-    }
-    let mid = ai.hits[0][0].charCodeAt() - 97;
-    let pos = arr.slice(mid + 1, 10);
-    let neg = arr.slice(0, mid);
-    ai.pos = pos.filter(x => ai.guessesLeft.includes(x));
-    ai.neg = neg.filter(x => ai.guessesLeft.includes(x)).reverse();
+    ai.horizontal = true;
   }
-}
-
-function checkVrt() {
-  let ans = '';
-  if (ai.pos.length === 0 && ai.neg.length === 0) {
-    aiReset();
-    return ai.guessesLeft[Math.floor(Math.random() * ai.guessesLeft.length)];
-  }
-  if (ai.posFirst) {
-    if (ai.firstDir && ai.pos.length > 0) {
-      goPos();
-    } else {
-      goNeg();
-    }
+  if (cell > ai.hits[0]) {
+    ai.startPostv = true;
   } else {
-    if (ai.firstDir && ai.neg.length > 0) {
-      goNeg();
-    } else {
-      goPos();
-    }
+    ai.startPostv = false;
   }
-  function goPos() {
-    let arr = ai.pos.filter(x => ai.guessesLeft.includes(x));
-    if (arr.length === 0) return goNeg();
-    ans = arr[0];
-    arr.shift();
-    ai.pos = arr;
-    if (ai.pos.length === 0) {
-      if (ai.firstDir) {
-        ai.firstDir = false;
-      } else {
-        aiReset();
-      }
-    }
-  }
-  function goNeg() {
-    let arr = ai.neg.filter(x => ai.guessesLeft.includes(x));
-    if (arr.length === 0) return goPos();
-    ans = arr[0];
-    arr.shift();
-    ai.neg = arr;
-    if (ai.neg.length === 0) {
-      if (ai.firstDir) {
-        ai.firstDir = false;
-      } else {
-        aiReset();
-      }
-    }
-  }
-  return ans;
 }
 
-function checkHrz() {
-  let ans = '';
-  if (ai.pos.length === 0 && ai.neg.length === 0) {
-    aiReset();
-    return ai.guessesLeft[Math.floor(Math.random() * ai.guessesLeft.length)];
-  }
-  if (ai.posFirst) {
-    if (ai.firstDir) {
-      goPos();
-    } else {
-      goNeg();
-    }
+function nextInDirection() {
+  let ans = [];
+  let num = ai.firstDir ? ai.hits[ai.hits.length - 1] : ai.hits[0];
+  let posDir = ai.firstDir ? ai.startPostv : !ai.startPostv;
+
+  if (ai.horizontal) {
+    ans = posDir ? [num + 1] : [num - 1];
   } else {
-    if (ai.firstDir) {
-      goNeg();
+    ans = posDir ? [num + 10] : [num - 10];
+  }
+  return ans.filter(x => x >= 0 && x < 100 && !user.cells[x].revealed);
+}
+
+function adjacent(firstHit) {
+  let temp = [firstHit + 1, firstHit - 1, firstHit + 10, firstHit - 10];
+  let ans = [];
+
+  temp.forEach((x, i) => {
+    if (i < 2) {
+      if (Math.floor(x / 10) === Math.floor(firstHit / 10)) {
+        ans.push(x);
+      }
     } else {
-      goPos();
-    }
-  }
-  function goPos() {
-    let arr = ai.pos.filter(x => ai.guessesLeft.includes(x));
-    if (arr.length === 0) {
-      if (ai.firstDir) {
-        ai.firstDir = false;
-        return checkHrz();
-      } else {
-        return ai.guessesLeft[Math.floor(Math.random() * ai.guessesLeft.length)];
+      if (x % 10 === firstHit % 10) {
+        ans.push(x);
       }
     }
-    ans = arr[0];
-    arr.shift();
-    ai.pos = arr;
-    if (ai.pos.length === 0) {
-      if (ai.firstDir) {
-        ai.firstDir = false;
-      } else {
-        aiReset();
-      }
-    }
-    return ans;
-  }
-  function goNeg() {
-    let arr = ai.neg.filter(x => ai.guessesLeft.includes(x));
-    if (arr.length === 0) {
-      if (ai.firstDir) {
-        ai.firstDir = false;
-        return checkHrz();
-      } else {
-        return ai.guessesLeft[Math.floor(Math.random() * ai.guessesLeft.length)];
-      }
-    }
-    ans = arr[0];
-    arr.shift();
-    ai.neg = arr;
-    if (ai.neg.length === 0) {
-      if (ai.firstDir) {
-        ai.firstDir = false;
-      } else {
-        aiReset();
-      }
-    }
-  }
-  return ans;
-}
-
-function aiReset() {
-  ai.hits = [];
-  ai.neg = [];
-  ai.pos = [];
-  console.log('reset', ai);
-}
-
-function findAdjacentCells(cell) {
-  let temp = [
-    `${cell[0]}${parseInt(cell[1]) - 1}`,
-    `${cell[0]}${parseInt(cell[1]) + 1}`,
-    `${String.fromCharCode(cell[0].charCodeAt() + 1)}${cell[1]}`,
-    `${String.fromCharCode(cell[0].charCodeAt() - 1)}${cell[1]}`,
-  ];
-  let adj = temp.filter(c => ai.guessesLeft.includes(c));
-  return adj;
-}
-
-function renderCell(c, status) {
-  //add class hit or miss
-  let cell = userCells.find(x => x.id === c);
-  cell.classList.add(status);
+  });
+  return ans.filter(x => x >= 0 && x < 100 && !user.cells[x].revealed);
 }
 
 function renderWin() {
@@ -580,10 +460,55 @@ function renderWin() {
 
 function renderLoss() {}
 
-initGame();
-placeAiPieces();
-console.log(userGrid);
+//turn controlloer
 
+function startAiTurn() {
+  toggle();
+  game.aiTurn = true;
+  aiMove();
+}
+
+function aiMove() {
+  aiLoopTest(19);
+}
+function aiLoopTest(counter) {
+  if (game.aiTurn) {
+    setTimeout(function () {
+      aiFire();
+      counter--;
+      if (counter < 19) {
+    }, 1000);
+  } else {
+    setTimeout(endAiTurn, 1000);
+  }
+}
+
+function endAiTurn() {
+  game.myTurn = true;
+  toggle();
+}
+
+function flyBy(cell) {
+  let top = 0;
+  let row = Math.floor(cell / 10);
+  if (row < 2) {
+    top = 0;
+  } else if (row < 4) {
+    top = 16;
+  } else if (row < 6) {
+    top = 34;
+  } else if (row < 8) {
+    top = 51;
+  } else if (row < 10) {
+    top = 67;
+  }
+  jet.style.top = top + 'vh';
+  jet.classList.toggle('fly-over');
+  setTimeout(() => jet.classList.toggle('fly-over'), 2000);
+}
+
+//Game start
+initGame();
 /*
 AI CODE
 
