@@ -46,6 +46,7 @@ const splashPlayer = new Audio();
 let game = {
   myTurn: true,
   aiTurn: false,
+  mobile: false,
 };
 let user = {
   cells: [],
@@ -53,6 +54,7 @@ let user = {
   horizontal: true,
   hovered: [],
   taken: '',
+  cellSelected: -1,
 };
 let ai = {
   cells: [],
@@ -70,13 +72,14 @@ let ai = {
 const userBoard = document.querySelector('.user-board');
 const aiBoard = document.querySelector('.ai-board');
 const mainEl = document.querySelector('main');
+const boardMsg = document.querySelector('body > h2');
 
 let userGrid = [];
 let aiGrid = [];
 
 const flipBtn = document.getElementById('horizontal-btn');
 const toggleBtn = document.getElementById('toggle');
-const aiBtn = document.getElementById('ai-fire');
+const aiBtn = document.getElementById('fire-btn');
 
 const jet = document.querySelector('.jet');
 
@@ -86,9 +89,9 @@ flipBtn.addEventListener('click', e => {
   user.horizontal = user.horizontal ? false : true;
 });
 
-userBoard.addEventListener('click', placePiece);
-aiBoard.addEventListener('click', fire);
-aiBtn.addEventListener('click', aiFire);
+userBoard.addEventListener('click', prePlacePiece);
+aiBoard.addEventListener('click', selectCell);
+aiBtn.addEventListener('click', handleFireBtn);
 
 //functions
 
@@ -98,6 +101,9 @@ function initGame() {
   initBoard(userBoard);
   initBoard(aiBoard);
   aiPlaceShips();
+  if (window.innerWidth <= 800) {
+    game.mobile = true;
+  }
 }
 
 function initBoard(obj) {
@@ -141,11 +147,14 @@ function renderGrid(grid) {
 function toggle(e) {
   userBoard.classList.toggle('hidden');
   aiBoard.classList.toggle('hidden');
+  boardMsg.textContent =
+    boardMsg.textContent === "USER'S BOARD" ? "COMPUTER'S BOARD" : "USER'S BOARD";
 }
 
 function mouseEnter(e) {
   //if target is far enough away from edge for piece to fit, toogle good class
   //else toggle bad class
+  if (game.mobile) return;
   if (user.horizontal) {
     for (let i = 0; i < user.ships[0].size; i++) {
       user.hovered.push(parseInt(e.target.id) + i);
@@ -162,6 +171,7 @@ function mouseEnter(e) {
 function mouseLeave(target) {
   //if target is far enough away from edge for piece to fit, toogle good class
   //else toggle bad class
+  if (game.mobile) return;
   let temp = user.hovered.filter(c => c < 100);
   temp.forEach(cell => {
     userGrid[cell].classList.remove('hoveredGreen');
@@ -171,16 +181,44 @@ function mouseLeave(target) {
 }
 
 function aiMouseEnter(e) {
+  if (game.mobile) return;
   if (!ai.cells[e.target.id].revealed) {
     e.target.classList.add('ai-hover');
   }
 }
 
 function aiMouseLeave(e) {
-  e.target.classList.remove('ai-hover');
+  if (!game.mobile) {
+    e.target.classList.remove('ai-hover');
+  }
 }
 
-function placePiece(e) {
+function prePlacePiece(e) {
+  if (game.mobile) {
+    if (user.hovered.length > 0) {
+      user.hovered.forEach(cell => {
+        userGrid[cell].classList.remove('hoveredRed');
+        userGrid[cell].classList.remove('hoveredGreen');
+      });
+    }
+    user.hovered = [];
+    if (user.horizontal) {
+      for (let i = 0; i < user.ships[0].size; i++) {
+        user.hovered.push(parseInt(e.target.id) + i);
+      }
+    } else {
+      for (let i = 0; i < user.ships[0].size; i++) {
+        user.hovered.push(parseInt(e.target.id) + i * 10);
+      }
+    }
+    user.taken = checkTaken(user.hovered, user) ? 'hoveredRed' : 'hoveredGreen';
+    renderUserCells(user.hovered);
+  } else {
+    placePiece();
+  }
+}
+
+function placePiece(cell) {
   //updates userGrid to show where the pieces are
   //store the size of the ship in each cell
   if (user.taken === 'hoveredGreen' && user.hovered.length > 0) {
@@ -196,6 +234,8 @@ function placePiece(e) {
       }
       if (!user.horizontal) {
         shipPiece = 'vert-' + shipPiece;
+      } else {
+        shipPiece = 'hor-' + shipPiece;
       }
       ship.src = `assets/ships/${shipPiece}.png`;
       userGrid[cell].appendChild(ship);
@@ -209,7 +249,10 @@ function placePiece(e) {
       });
       toggle();
     }
-    mouseLeave();
+    user.hovered.forEach(cell => {
+      userGrid[cell].classList.remove('hoveredRed');
+      userGrid[cell].classList.remove('hoveredGreen');
+    });
     user.hovered = [];
   }
 }
@@ -226,13 +269,40 @@ function renderUserCells(cells) {
 
 // User functions
 
-function fire(e) {
+function handleFireBtn(e) {
+  if (user.ships.length > 0) {
+    placePiece(user.cellSelected);
+  } else {
+    fire(user.cellSelected);
+  }
+}
+
+function selectCell(e) {
+  let cell = e.target;
+  if (!cell.classList.value.split(' ').includes('cell')) return;
+  if (!game.mobile) return fire(cell.id);
+  let targetEl = document.createElement('img');
+  targetEl.src = 'assets/target-01.svg';
+  targetEl.id = 'cross-hairs';
+  let oldTarget = document.getElementById('cross-hairs');
+  console.log(oldTarget);
+  if (user.cellSelected >= 0 && oldTarget !== null)
+    aiGrid[user.cellSelected].removeChild(oldTarget);
+  console.log(user.cellSelected, cell.id);
+  aiGrid[cell.id].appendChild(targetEl);
+  user.cellSelected = cell.id;
+}
+
+function fire(cell) {
   //checks aiGrid
   if (!game.myTurn) {
     return;
   }
-  let id = e.target.id;
-  if (!e.target.classList.value.split(' ').includes('cell')) return;
+
+  let oldTarget = document.getElementById('cross-hairs');
+  if (user.cellSelected >= 0) aiGrid[user.cellSelected].removeChild(oldTarget);
+
+  let id = cell;
   if (!ai.cells[id].revealed) {
     if (ai.cells[id].contents === 'ship') {
       //show hit on grid

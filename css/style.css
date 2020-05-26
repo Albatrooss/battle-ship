@@ -7,34 +7,57 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
+    background-color: #ddd;
 }
+
+
+/*---------  --------------*/
 main {
     width: 100%;
+    height: 100vw;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
     overflow: hidden;
     position: relative;
 }
 nav {
     align-self: center;
+    color: #fff;
+    text-align: center;
+    background-color: slategrey;
+    width: 100%;
+}
+body > h2 {
+    color: #555;
+    text-align: center;
+}
+.game-view {
+    background-color: #fff;
+    padding: 10px;
 }
 .user-board,
 .ai-board {
     display: grid;
     grid-template: repeat(10, 1fr) / repeat(10, 1fr);
-    grid-gap: 1px;
-}
-.ai-board {
-    background-color: #aaa;
+    grid-gap: 1vw;
 }
 .hidden {
     display: none;
 }
+
+/*------- UI ------------*/
+
+.ui-before {
+    display: none;
+}
+
+/*------- CELLS ---------*/
+
 .cell {
-    height: 50px;
-    width: 50px;
-    border: 1px solid black;
+    background-color: skyblue;
+    height: 9vw;
+    width: 9vw;
     display: flex;
     justify-content: space-around;
     align-items: center;
@@ -66,6 +89,8 @@ nav {
 .hoveredRed {
     background-color: coral;
 }
+
+/*------- SHIPS --------*/
 
 .ship {
     background-color: cornflowerblue;
@@ -105,10 +130,8 @@ nav {
     width: 90%;
 }
 
-footer {
-    margin-top: auto;
-    align-self: center;
-}
+
+/*------- EFFECTS ANIMATION -------*/
 
 .jet {
     height: 20vh;
@@ -140,4 +163,41 @@ footer {
 }
 .fade-out {
     opacity: 0;
+}
+
+
+/*--------- CREDITS ---------*/
+
+footer {
+    margin-top: auto;
+    align-self: center;
+}
+
+/*-------MEDIA ---------*/
+
+@media only screen and (min-width: 800px) {
+    body {
+        /* background-color: salmon; */
+        align-items: center;
+    }
+    main {
+        width: 800px;
+        height: 800px;
+    }
+    .game-view {
+        width: 800px;
+        height: 800px;
+        border-radius: 4px;
+    }
+    .user-board,
+    .ai-board {
+        grid-gap: 8px;
+    }
+    .cell {
+        width: 71px;
+        height: 71px;
+    }
+    #fire-btn {
+        display: none;
+    }
 }
