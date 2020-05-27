@@ -73,12 +73,16 @@ let ai = {
 
 const userBoard = document.querySelector('.user-board');
 const aiBoard = document.querySelector('.ai-board');
+const menuBoard = document.querySelector('.menu-board');
 const mainEl = document.querySelector('main');
 const boardMsg = document.querySelector('body > h2');
 const messageBanner = document.getElementById('message');
+const menu = document.getElementById('menu');
+const menuBtn = document.querySelector('#menu h2');
 
 let userGrid = [];
 let aiGrid = [];
+let menuGrid = [];
 
 const flipBtn = document.getElementById('horizontal-btn');
 const toggleBtn = document.getElementById('toggle');
@@ -87,10 +91,7 @@ const aiBtn = document.getElementById('fire-btn');
 const jet = document.querySelector('.jet');
 
 /*--------- EVENT LISTENERS ---------*/
-
-flipBtn.addEventListener('click', e => {
-  user.horizontal = user.horizontal ? false : true;
-});
+menuBtn.addEventListener('click', toggleMenu);
 
 userBoard.addEventListener('click', prePlacePiece);
 aiBoard.addEventListener('click', selectCell);
@@ -103,6 +104,7 @@ aiBtn.addEventListener('click', handleFireBtn);
 function initGame() {
   initBoard(userBoard);
   initBoard(aiBoard);
+  initBoard(menuBoard);
   aiPlaceShips();
   if (window.innerWidth <= 800) {
     game.mobile = true;
@@ -121,6 +123,8 @@ function initBoard(obj) {
       cell.addEventListener('mouseenter', mouseEnter);
       cell.addEventListener('mouseleave', mouseLeave);
       userGrid.push(cell);
+    } else if (obj === menuBoard) {
+      menuGrid.push(cell);
     } else {
       cell.addEventListener('mouseenter', aiMouseEnter);
       cell.addEventListener('mouseleave', aiMouseLeave);
@@ -155,7 +159,9 @@ function startGame() {
     cell.removeEventListener('mouseenter', mouseEnter);
     cell.removeEventListener('mouseleave', mouseLeave);
   });
-  aiBtn.style.display = 'none';
+  if (!game.mobile) {
+    aiBtn.style.display = 'none';
+  }
   toggle();
 }
 
@@ -249,6 +255,7 @@ function placePiece(cell) {
   if (user.taken === 'hoveredGreen' && user.hovered.length > 0) {
     user.hovered.forEach((cell, i) => {
       let ship = document.createElement('img');
+      let menuShip = document.createElement('img');
       let shipPiece = '';
       if (i === 0) {
         shipPiece = 'front';
@@ -263,7 +270,9 @@ function placePiece(cell) {
         shipPiece = 'hor-' + shipPiece;
       }
       ship.src = `assets/ships/${shipPiece}.png`;
+      menuShip.src = `assets/ships/${shipPiece}.png`;
       userGrid[cell].appendChild(ship);
+      menuGrid[cell].appendChild(menuShip);
       user.cells[cell].contents = 'ship';
     });
     user.ships.shift();
@@ -557,7 +566,10 @@ function displayMessageBanner(message) {
   messageBanner.innerHTML = `<h2>${message}<h2>`;
   messageBanner.classList.add('showing');
   setTimeout(() => messageBanner.classList.add('out'), 1000);
-  setTimeout(() => (messageBanner.className = ''), 1600);
+  setTimeout(() => {
+    messageBanner.className = '';
+    messageBanner.textContent = '';
+  }, 1600);
 }
 
 function displayWinner(winner) {}
@@ -587,7 +599,9 @@ function aiAnimateShots() {
   if (ai.shots.length <= 0) return setTimeout(endAiTurn, 1000);
   setTimeout(() => {
     let where = userGrid[ai.shots[0]];
+    let whereElse = menuGrid[ai.shots[0]];
     let piece = document.createElement('div');
+    let menuPiece = document.createElement('div');
     let explosion = document.createElement('img');
     let smoke = document.createElement('img');
     smoke.src = 'assets/explosions/smoke-02.gif';
@@ -596,7 +610,9 @@ function aiAnimateShots() {
     explosion.className = 'explosion';
     let clss = ai.shots.length === 1 ? 'miss' : 'hit';
     piece.classList.add(clss);
+    menuPiece.classList.add(clss);
     where.appendChild(piece);
+    whereElse.appendChild(menuPiece);
     if (clss === 'hit') {
       where.appendChild(explosion);
       where.appendChild(smoke);
@@ -623,24 +639,34 @@ function flyBy(cell) {
   jet.src = 'assets/Jet01.png';
   let top = 0;
   let row = Math.floor(cell / 10);
-  if (row < 3) {
-    top = 0;
+  if (row < 2) {
+  } else if (row < 4) {
+    top = 18;
   } else if (row < 6) {
-    top = 28;
+    top = 37.5;
+  } else if (row < 8) {
+    top = 56;
   } else {
-    top = 53;
+    top = 75;
   }
   mainEl.appendChild(jet);
-  setTimeout(() => (jet.style.top = top + 'vh'), 0);
+  setTimeout(() => (jet.style.top = top + '%'), 0);
   setTimeout(() => jet.classList.toggle('fly-over'), 0);
   setTimeout(() => mainEl.removeChild(jet), 2000);
 }
 
-/*-------- AUIO ------*/
+/*-------- AUDIO ------*/
 
 function playSound(name, source) {
   source.src = sounds[name];
   source.play();
+}
+
+/*---------- MENU ----------*/
+
+function toggleMenu() {
+  menu.classList.toggle('visible');
+  menuBtn.classList.toggle('visible');
 }
 
 /*-------- ON START ------*/
