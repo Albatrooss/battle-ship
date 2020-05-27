@@ -1,4 +1,4 @@
-// constants
+/*--------- CONSTANTS ---------*/
 
 const ships = [
   {
@@ -38,10 +38,12 @@ const sounds = {
   explosion: 'assets/sounds/explosion-01.mp3',
   splash: 'assets/sounds/splash.wav',
 };
+
 const audioPlayer = new Audio();
 const explosionPlayer = new Audio();
 const splashPlayer = new Audio();
-// app's state
+
+/*--------- APP STATE ---------*/
 
 let game = {
   myTurn: true,
@@ -67,12 +69,13 @@ let ai = {
   shots: [],
 };
 
-//cached element refs
+/*--------- DOM ELEMENTS ---------*/
 
 const userBoard = document.querySelector('.user-board');
 const aiBoard = document.querySelector('.ai-board');
 const mainEl = document.querySelector('main');
 const boardMsg = document.querySelector('body > h2');
+const messageBanner = document.getElementById('message');
 
 let userGrid = [];
 let aiGrid = [];
@@ -83,7 +86,7 @@ const aiBtn = document.getElementById('fire-btn');
 
 const jet = document.querySelector('.jet');
 
-//event listeners
+/*--------- EVENT LISTENERS ---------*/
 
 flipBtn.addEventListener('click', e => {
   user.horizontal = user.horizontal ? false : true;
@@ -93,9 +96,9 @@ userBoard.addEventListener('click', prePlacePiece);
 aiBoard.addEventListener('click', selectCell);
 aiBtn.addEventListener('click', handleFireBtn);
 
-//functions
+/*------------------------------------- FUNCTIONS -------------------------------------------*/
 
-//Game Start
+/*--------- GAME START ---------*/
 
 function initGame() {
   initBoard(userBoard);
@@ -103,6 +106,8 @@ function initGame() {
   aiPlaceShips();
   if (window.innerWidth <= 800) {
     game.mobile = true;
+  } else {
+    aiBtn.textContent = 'Rotate';
   }
 }
 
@@ -143,7 +148,19 @@ function renderGrid(grid) {
   });
 }
 
-//Evemt Listener functions
+function startGame() {
+  aiBtn.textContent = 'FIRE';
+  displayMessageBanner('YOUR TURN!');
+  userGrid.forEach(cell => {
+    cell.removeEventListener('mouseenter', mouseEnter);
+    cell.removeEventListener('mouseleave', mouseLeave);
+  });
+  aiBtn.style.display = 'none';
+  toggle();
+}
+
+/*--------- HANDLE EVENTS ---------*/
+
 function toggle(e) {
   userBoard.classList.toggle('hidden');
   aiBoard.classList.toggle('hidden');
@@ -194,25 +211,33 @@ function aiMouseLeave(e) {
 }
 
 function prePlacePiece(e) {
+  if (!e.target.className.split(' ').includes('cell')) return;
   if (game.mobile) {
-    if (user.hovered.length > 0) {
-      user.hovered.forEach(cell => {
-        userGrid[cell].classList.remove('hoveredRed');
-        userGrid[cell].classList.remove('hoveredGreen');
-      });
+    if (parseInt(e.target.id) === user.hovered[0]) {
+      user.horizontal = user.horizontal ? false : true;
+      return showHover();
     }
-    user.hovered = [];
-    if (user.horizontal) {
-      for (let i = 0; i < user.ships[0].size; i++) {
-        user.hovered.push(parseInt(e.target.id) + i);
+    showHover();
+    function showHover() {
+      if (user.hovered.length > 0) {
+        user.hovered.forEach(cell => {
+          userGrid[cell].classList.remove('hoveredRed');
+          userGrid[cell].classList.remove('hoveredGreen');
+        });
       }
-    } else {
-      for (let i = 0; i < user.ships[0].size; i++) {
-        user.hovered.push(parseInt(e.target.id) + i * 10);
+      user.hovered = [];
+      if (user.horizontal) {
+        for (let i = 0; i < user.ships[0].size; i++) {
+          user.hovered.push(parseInt(e.target.id) + i);
+        }
+      } else {
+        for (let i = 0; i < user.ships[0].size; i++) {
+          user.hovered.push(parseInt(e.target.id) + i * 10);
+        }
       }
+      user.taken = checkTaken(user.hovered, user) ? 'hoveredRed' : 'hoveredGreen';
+      renderUserCells(user.hovered);
     }
-    user.taken = checkTaken(user.hovered, user) ? 'hoveredRed' : 'hoveredGreen';
-    renderUserCells(user.hovered);
   } else {
     placePiece();
   }
@@ -243,11 +268,7 @@ function placePiece(cell) {
     });
     user.ships.shift();
     if (user.ships.length === 0) {
-      userGrid.forEach(cell => {
-        cell.removeEventListener('mouseenter', mouseEnter);
-        cell.removeEventListener('mouseleave', mouseLeave);
-      });
-      toggle();
+      startGame();
     }
     user.hovered.forEach(cell => {
       userGrid[cell].classList.remove('hoveredRed');
@@ -259,6 +280,7 @@ function placePiece(cell) {
 
 function renderUserCells(cells) {
   let newCells = cells.filter(c => c < 100);
+  // if ()
   if (newCells.length !== cells.length) {
     user.taken = 'hoveredRed';
   }
@@ -267,13 +289,17 @@ function renderUserCells(cells) {
   });
 }
 
-// User functions
+/*--------- USER FUNCTIONS ---------*/
 
 function handleFireBtn(e) {
-  if (user.ships.length > 0) {
-    placePiece(user.cellSelected);
+  if (game.mobile) {
+    if (user.ships.length > 0) {
+      placePiece(user.cellSelected);
+    } else {
+      fire(user.cellSelected);
+    }
   } else {
-    fire(user.cellSelected);
+    user.horizontal = user.horizontal ? false : true;
   }
 }
 
@@ -295,7 +321,7 @@ function selectCell(e) {
 
 function fire(cell) {
   //checks aiGrid
-  if (!game.myTurn) {
+  if (!game.myTurn || ai.hp < 1) {
     return;
   }
 
@@ -317,7 +343,7 @@ function fire(cell) {
       setTimeout(startAiTurn, 1000);
     }
     ai.cells[id].revealed = true;
-    if (ai.hp < 1) alert('you win!');
+    if (ai.hp < 1) displayWinner('user');
   } else {
     return;
   }
@@ -339,7 +365,7 @@ function showAi() {
   });
 }
 
-// AI functions
+/*--------- AI FUNCTIONS ---------*/
 
 function aiPlaceShips() {
   //randomly places ai pieces
@@ -403,12 +429,9 @@ function changeHorizontal() {
 }
 
 function aiFire(e) {
-  // if last shot was first hit
-  // fire random one u d l r
-  // else if last shot was > 1 && < size
-  // fire ranom in same direction
-  //else
-  //fire on random cell
+  if (user.hp > 1) {
+    return displayWinner('computer');
+  }
   let cell = aiPickTarget();
 
   //for debugging
@@ -419,6 +442,7 @@ function aiFire(e) {
   user.cells[cell].revealed = true;
   ai.shots.push(cell);
   if (user.cells[cell].contents === 'ship') {
+    user.hp--;
     if (ai.firstDir) {
       ai.hits.push(cell);
     } else {
@@ -429,6 +453,7 @@ function aiFire(e) {
     if (ai.hits.length > 1) {
       ai.firstDir = false;
     }
+    console.log(ai.shots);
     flyBy(ai.shots[0]);
     setTimeout(() => aiAnimateShots(cell), 1000);
     game.aiTurn = false;
@@ -502,6 +527,9 @@ function nextInDirection() {
   } else {
     ans = posDir ? [num + 10] : [num - 10];
   }
+  if (aiGrid[ans].contents === 'ships' && aiGrid[ans].revealed) {
+    console.log('hee hee');
+  }
   return ans.filter(x => x >= 0 && x < 100 && !user.cells[x].revealed);
 }
 
@@ -523,15 +551,21 @@ function adjacent(firstHit) {
   return ans.filter(x => x >= 0 && x < 100 && !user.cells[x].revealed);
 }
 
-function renderWin() {
-  //render win screan
+/*-----------  MESSAGES -----------*/
+
+function displayMessageBanner(message) {
+  messageBanner.innerHTML = `<h2>${message}<h2>`;
+  messageBanner.classList.add('showing');
+  setTimeout(() => messageBanner.classList.add('out'), 1000);
+  setTimeout(() => (messageBanner.className = ''), 1600);
 }
 
-function renderLoss() {}
+function displayWinner(winner) {}
 
-//turn controlloer
+/*----------- TURN CONTROLLER -------*/
 
 function startAiTurn() {
+  // displayMessageBanner("COMPUTER's TURN!");
   toggle();
   game.aiTurn = true;
   aiFire();
@@ -540,34 +574,46 @@ function startAiTurn() {
 function aiMove() {
   aiLoopTest(19);
 }
+
+function endAiTurn() {
+  game.myTurn = true;
+  displayMessageBanner('YOUR TURN!');
+  toggle();
+}
+
+/*--------- ANIMATIONS ---------*/
+
 function aiAnimateShots() {
   if (ai.shots.length <= 0) return setTimeout(endAiTurn, 1000);
   setTimeout(() => {
     let where = userGrid[ai.shots[0]];
     let piece = document.createElement('div');
     let explosion = document.createElement('img');
+    let smoke = document.createElement('img');
+    smoke.src = 'assets/explosions/smoke-02.gif';
     explosion.src = 'assets/explosions/transparent-explosions-animated-gif-1.gif';
+    smoke.className = 'explosion smoke';
     explosion.className = 'explosion';
     let clss = ai.shots.length === 1 ? 'miss' : 'hit';
     piece.classList.add(clss);
     where.appendChild(piece);
-    where.appendChild(explosion);
-    clss === 'hit' ? playSound('explosion', explosionPlayer) : playSound('splash', splashPlayer);
-    setTimeout(() => explosion.classList.add('fade-out'), 600);
-    if (ai.shots.length === 3 || ai.shots.length === 6) {
-      setTimeout(() => {
-        console.log(ai.shots);
-        flyBy(ai.shots[0]);
-      }, 500);
+    if (clss === 'hit') {
+      where.appendChild(explosion);
+      where.appendChild(smoke);
+      playSound('explosion', explosionPlayer);
+    } else {
+      playSound('splash', splashPlayer);
     }
+    setTimeout(() => explosion.classList.add('fade-out'), 600);
+    // if (ai.shots.length === 3 || ai.shots.length === 6) {
+    //   setTimeout(() => {
+    //     console.log(ai.shots);
+    //     flyBy(ai.shots[0]);
+    //   }, 500);
+    // }
     ai.shots.shift();
     return aiAnimateShots();
   }, 500);
-}
-
-function endAiTurn() {
-  game.myTurn = true;
-  toggle();
 }
 
 function flyBy(cell) {
@@ -575,22 +621,17 @@ function flyBy(cell) {
   let jet = document.createElement('img');
   jet.className = 'jet';
   jet.src = 'assets/Jet01.png';
-  mainEl.appendChild(jet);
   let top = 0;
   let row = Math.floor(cell / 10);
-  if (row < 2) {
+  if (row < 3) {
     top = 0;
-  } else if (row < 4) {
-    top = 20;
   } else if (row < 6) {
-    top = 40;
-  } else if (row < 8) {
-    top = 60;
+    top = 28;
   } else {
-    top = 80;
+    top = 53;
   }
-  console.log(top);
-  jet.style.top = top + '%';
+  mainEl.appendChild(jet);
+  setTimeout(() => (jet.style.top = top + 'vh'), 0);
   setTimeout(() => jet.classList.toggle('fly-over'), 0);
   setTimeout(() => mainEl.removeChild(jet), 2000);
 }
@@ -602,19 +643,6 @@ function playSound(name, source) {
   source.play();
 }
 
-//Game start
+/*-------- ON START ------*/
+
 initGame();
-/*
-AI CODE
-
-first shot hit  
-  register starting point
-second shot UDLR
-  if miss try again
-  if hit register HOR/VERT
-third shot HOR/VER same dir
-  if allreadyshot turn around
-
-
-
-*/

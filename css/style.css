@@ -8,19 +8,12 @@ body {
     flex-direction: column;
     justify-content: flex-start;
     background-color: #ddd;
+    overflow-x: hidden;
 }
 
 
-/*---------  --------------*/
-main {
-    width: 100%;
-    height: 100vw;
-    display: flex;
-    justify-content: center;
-    align-items: flex-start;
-    overflow: hidden;
-    position: relative;
-}
+/*---------   --------*/
+
 nav {
     align-self: center;
     color: #fff;
@@ -32,12 +25,26 @@ body > h2 {
     color: #555;
     text-align: center;
 }
+
+main {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    overflow: hidden;
+    position: relative;
+}
 .game-view {
+    width: 100vw;
+    height: 100vw;
     background-color: #fff;
     padding: 10px;
 }
 .user-board,
 .ai-board {
+    width: 100%;
+    height: 100%;
     display: grid;
     grid-template: repeat(10, 1fr) / repeat(10, 1fr);
     grid-gap: 1vw;
@@ -56,8 +63,8 @@ body > h2 {
 
 .cell {
     background-color: skyblue;
-    height: 9vw;
-    width: 9vw;
+    height: 100%;
+    width: 100%;
     display: flex;
     justify-content: space-around;
     align-items: center;
@@ -71,8 +78,8 @@ body > h2 {
 .miss {
     position: absolute;
     z-index: 2;
-    width: 25px;
-    height: 25px;
+    width: 50%;
+    height: 50%;
     border-radius: 50%;
     border: 1px solid #333;
     background-color: red;
@@ -130,11 +137,56 @@ body > h2 {
     width: 90%;
 }
 
+/*--------- MESSAGES ---------*/
+
+#message {
+    background-color: rgba(122, 134, 133, 0.75);
+    color: #fff;
+    box-shadow: 0 0 10px rgba(0, 0, 0, .75);
+    font-size: 10vh;
+    width: 76vw;
+    height: 30vh;
+    position: absolute;
+    z-index: 10;
+    top: 30vh;
+    left: -76vw;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+#message.showing {
+    left: 12vw;
+    transition: left .5s ease-out;
+}
+
+#message.out {
+    left: 100vw;
+    transition: left .5s ease-in;
+}
+
+#winner-banner {
+    position: absolute;
+    width: 80vw;
+    height: 75vh;
+    background-color: purple;
+    top: -75vh;
+    left: 50%;
+    margin-left: -40vw;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#winner-banner.showing {
+    top: 0;
+    transition: top 1.5s ease-out;
+}
 
 /*------- EFFECTS ANIMATION -------*/
 
 .jet {
-    height: 20vh;
+    height: 25vh;
     position: absolute;
     top: 50vh;
     left: 120vw;
@@ -161,6 +213,12 @@ body > h2 {
     position: absolute;
     z-index: 5;
 }
+.cell .smoke {
+    width: 400%;
+    opacity: 1;
+    top: -93px;
+    z-index: 4;
+}
 .fade-out {
     opacity: 0;
 }
@@ -180,24 +238,29 @@ footer {
         /* background-color: salmon; */
         align-items: center;
     }
-    main {
-        width: 800px;
-        height: 800px;
-    }
     .game-view {
-        width: 800px;
-        height: 800px;
-        border-radius: 4px;
+        width: 80vh;
+        height: 80vh;
+        border-radius: 5px;
+        /* padding: 1vh; */
     }
     .user-board,
     .ai-board {
-        grid-gap: 8px;
+        grid-gap: 1vh 1vh;
     }
-    .cell {
-        width: 71px;
-        height: 71px;
+    #winner-banner {
+        width: 50vw;
+        margin-left: -25vw;
     }
-    #fire-btn {
-        display: none;
+    #message {
+        width: 50vw;
+        left: -50vw;
+    }
+    #message.showing {
+        left: 25vw;
+    }
+    #message.out {
+        left: 100vw;
+        transition: left .5s ease-in;
     }
 }
