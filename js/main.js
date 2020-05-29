@@ -35,39 +35,22 @@ const ships = [
 
 const sounds = {
   jet: 'assets/sounds/fly-by-01.wav',
-  explosion: 'assets/sounds/explosion-01.mp3',
+  explosion: 'assets/sounds/explosion-02.wav',
+  splat: 'assets/sounds/wet-splat.wav',
   splash: 'assets/sounds/splash.wav',
+  click: 'assets/sounds/click-01.wav',
 };
 
 const audioPlayer = new Audio();
 const explosionPlayer = new Audio();
+explosionPlayer.volume = 0.5;
 const splashPlayer = new Audio();
 
 /*--------- APP STATE ---------*/
 
-let game = {
-  myTurn: true,
-  aiTurn: false,
-  mobile: false,
-};
-let user = {
-  cells: [],
-  ships: [...ships],
-  horizontal: true,
-  hovered: [],
-  taken: '',
-  cellSelected: -1,
-};
-let ai = {
-  cells: [],
-  ships: [...ships],
-  hp: 19,
-  hits: [],
-  horizontal: false,
-  startPostv: true,
-  firstDir: true,
-  shots: [],
-};
+let game = {};
+let user = {};
+let ai = {};
 
 /*--------- DOM ELEMENTS ---------*/
 
@@ -79,6 +62,7 @@ const boardMsg = document.querySelector('body > h2');
 const messageBanner = document.getElementById('message');
 const menu = document.getElementById('menu');
 const menuBtn = document.querySelector('#menu h2');
+const winnerBanner = document.querySelector('#winner-banner');
 
 let userGrid = [];
 let aiGrid = [];
@@ -97,20 +81,54 @@ userBoard.addEventListener('click', prePlacePiece);
 aiBoard.addEventListener('click', selectCell);
 aiBtn.addEventListener('click', handleFireBtn);
 
+window.addEventListener('keydown', rotatePiece);
+
 /*------------------------------------- FUNCTIONS -------------------------------------------*/
 
 /*--------- GAME START ---------*/
 
 function initGame() {
+  game = {
+    myTurn: true,
+    aiTurn: false,
+    mobile: false,
+  };
+  user = {
+    cells: [],
+    ships: [...ships],
+    horizontal: true,
+    hovered: [],
+    hovering: false,
+    taken: '',
+    cellSelected: -1,
+    hp: 19,
+  };
+  ai = {
+    cells: [],
+    ships: [...ships],
+    hp: 19,
+    hits: [],
+    horizontal: false,
+    startPostv: true,
+    firstDir: true,
+    shots: [],
+  };
+  if (window.innerWidth <= 800) {
+    game.mobile = true;
+  } else {
+    aiBtn.style.display = 'none';
+  }
   initBoard(userBoard);
   initBoard(aiBoard);
   initBoard(menuBoard);
   aiPlaceShips();
-  if (window.innerWidth <= 800) {
-    game.mobile = true;
+  let message = '';
+  if (game.mobile) {
+    message = "Let's Play BattleShip!";
   } else {
-    aiBtn.textContent = 'Rotate';
+    message = "Let's Play BattleShip!<hr>Press Space to rotate ship";
   }
+  displayMessageBanner(message);
 }
 
 function initBoard(obj) {
@@ -119,8 +137,8 @@ function initBoard(obj) {
     cell.className = 'cell';
     cell.id = i;
     if (obj === userBoard) {
-      user.cells.push({ revealed: false, contents: null, id: i });
-      cell.addEventListener('mouseenter', mouseEnter);
+      user.cells.push({ revealed: false, contents: null });
+      cell.addEventListener('mouseenter', e => mouseEnter(parseInt(e.target.id)));
       cell.addEventListener('mouseleave', mouseLeave);
       userGrid.push(cell);
     } else if (obj === menuBoard) {
@@ -128,7 +146,7 @@ function initBoard(obj) {
     } else {
       cell.addEventListener('mouseenter', aiMouseEnter);
       cell.addEventListener('mouseleave', aiMouseLeave);
-      ai.cells.push({ revealed: false, contents: null, id: i });
+      ai.cells.push({ revealed: false, contents: null });
       aiGrid.push(cell);
     }
     obj.appendChild(cell);
@@ -165,6 +183,27 @@ function startGame() {
   toggle();
 }
 
+function newGame() {
+  clearBoard(userBoard);
+  clearBoard(menuBoard);
+  clearBoard(aiBoard);
+  initGame();
+  userBoard.classList.remove('hidden');
+  aiBoard.classList.add('hidden');
+  boardMsg.textContent = "USER'S BOARD";
+}
+
+function clearBoard(board) {
+  board.innerHTML = '';
+  if (board === userBoard) {
+    userGrid = [];
+  } else if (board === menuBoard) {
+    menuGrid = [];
+  } else {
+    aiGrid = [];
+  }
+}
+
 /*--------- HANDLE EVENTS ---------*/
 
 function toggle(e) {
@@ -174,21 +213,22 @@ function toggle(e) {
     boardMsg.textContent === "USER'S BOARD" ? "COMPUTER'S BOARD" : "USER'S BOARD";
 }
 
-function mouseEnter(e) {
+function mouseEnter(root) {
   //if target is far enough away from edge for piece to fit, toogle good class
   //else toggle bad class
-  if (game.mobile) return;
+  if (game.mobile || !game.myTurn) return;
   if (user.horizontal) {
     for (let i = 0; i < user.ships[0].size; i++) {
-      user.hovered.push(parseInt(e.target.id) + i);
+      user.hovered.push(root + i);
     }
   } else {
     for (let i = 0; i < user.ships[0].size; i++) {
-      user.hovered.push(parseInt(e.target.id) + i * 10);
+      user.hovered.push(root + i * 10);
     }
   }
   user.taken = checkTaken(user.hovered, user) ? 'hoveredRed' : 'hoveredGreen';
   renderUserCells(user.hovered);
+  user.hovering = true;
 }
 
 function mouseLeave(target) {
@@ -201,10 +241,11 @@ function mouseLeave(target) {
     userGrid[cell].classList.remove('hoveredRed');
   });
   user.hovered = [];
+  user.hovering = false;
 }
 
 function aiMouseEnter(e) {
-  if (game.mobile) return;
+  if (game.mobile || ai.hp < 1) return;
   if (!ai.cells[e.target.id].revealed) {
     e.target.classList.add('ai-hover');
   }
@@ -227,8 +268,10 @@ function prePlacePiece(e) {
     function showHover() {
       if (user.hovered.length > 0) {
         user.hovered.forEach(cell => {
-          userGrid[cell].classList.remove('hoveredRed');
-          userGrid[cell].classList.remove('hoveredGreen');
+          if (cell < 100) {
+            userGrid[cell].classList.remove('hoveredRed');
+            userGrid[cell].classList.remove('hoveredGreen');
+          }
         });
       }
       user.hovered = [];
@@ -289,7 +332,6 @@ function placePiece(cell) {
 
 function renderUserCells(cells) {
   let newCells = cells.filter(c => c < 100);
-  // if ()
   if (newCells.length !== cells.length) {
     user.taken = 'hoveredRed';
   }
@@ -298,17 +340,22 @@ function renderUserCells(cells) {
   });
 }
 
+function rotatePiece(e) {
+  if (e.key === ' ' && !game.mobile && user.hovering) {
+    user.horizontal = user.horizontal ? false : true;
+    let root = user.hovered[0];
+    mouseLeave();
+    mouseEnter(root);
+  }
+}
+
 /*--------- USER FUNCTIONS ---------*/
 
 function handleFireBtn(e) {
-  if (game.mobile) {
-    if (user.ships.length > 0) {
-      placePiece(user.cellSelected);
-    } else {
-      fire(user.cellSelected);
-    }
+  if (user.ships.length > 0) {
+    placePiece(user.cellSelected);
   } else {
-    user.horizontal = user.horizontal ? false : true;
+    fire(user.cellSelected);
   }
 }
 
@@ -320,10 +367,8 @@ function selectCell(e) {
   targetEl.src = 'assets/target-01.svg';
   targetEl.id = 'cross-hairs';
   let oldTarget = document.getElementById('cross-hairs');
-  console.log(oldTarget);
   if (user.cellSelected >= 0 && oldTarget !== null)
     aiGrid[user.cellSelected].removeChild(oldTarget);
-  console.log(user.cellSelected, cell.id);
   aiGrid[cell.id].appendChild(targetEl);
   user.cellSelected = cell.id;
 }
@@ -342,12 +387,12 @@ function fire(cell) {
     if (ai.cells[id].contents === 'ship') {
       //show hit on grid
       ai.cells[id].contents = 'hit';
-      renderAiCell(id, 'hit');
+      renderAiCell(id, 'player-hit');
       ai.hp--;
     } else {
       //show miss
       ai.cells[id].contents = 'miss';
-      renderAiCell(id, 'miss');
+      banana(aiGrid[cell]);
       game.myTurn = false;
       setTimeout(startAiTurn, 1000);
     }
@@ -359,9 +404,16 @@ function fire(cell) {
 }
 
 function renderAiCell(cell, clss) {
-  let piece = document.createElement('div');
+  let piece = document.createElement('img');
   piece.className = clss;
   aiGrid[cell].appendChild(piece);
+  if (clss === 'banana-peel') {
+    piece.src = 'assets/banana-peel-01.png';
+    playSound('splat', splashPlayer);
+  } else {
+    piece.src = 'assets/buoy-02.gif';
+    explosion(aiGrid[cell]);
+  }
 }
 
 function showAi() {
@@ -387,18 +439,16 @@ function aiPlaceShips() {
       taken = checkTaken(cells, ai);
     }
     cells.forEach(c => {
-      if (ai.cells[c].contents !== null) {
-      } else {
+      if (ai.cells[c].contents === null) {
         cells.forEach(c => {
           ai.cells[c].contents = 'ship';
         });
-        ships.shift();
       }
     });
   });
   function randomRoot(s) {
     let temp = [];
-    let horizontal = Math.random() > 0.5 ? true : false;
+    let horizontal = Math.floor(Math.random() * 2);
     let root = Math.floor(Math.random() * 100);
     if (horizontal) {
       for (let i = 0; i < s.size; i++) {
@@ -438,9 +488,6 @@ function changeHorizontal() {
 }
 
 function aiFire(e) {
-  if (user.hp > 1) {
-    return displayWinner('computer');
-  }
   let cell = aiPickTarget();
 
   //for debugging
@@ -451,7 +498,6 @@ function aiFire(e) {
   user.cells[cell].revealed = true;
   ai.shots.push(cell);
   if (user.cells[cell].contents === 'ship') {
-    user.hp--;
     if (ai.firstDir) {
       ai.hits.push(cell);
     } else {
@@ -462,7 +508,6 @@ function aiFire(e) {
     if (ai.hits.length > 1) {
       ai.firstDir = false;
     }
-    console.log(ai.shots);
     flyBy(ai.shots[0]);
     setTimeout(() => aiAnimateShots(cell), 1000);
     game.aiTurn = false;
@@ -526,18 +571,19 @@ function detectOrientation(cell) {
   }
 }
 
-function nextInDirection() {
+function nextInDirection(mult = 1) {
   let ans = [];
   let num = ai.firstDir ? ai.hits[ai.hits.length - 1] : ai.hits[0];
   let posDir = ai.firstDir ? ai.startPostv : !ai.startPostv;
 
   if (ai.horizontal) {
-    ans = posDir ? [num + 1] : [num - 1];
+    ans = posDir ? [num + 1 * mult] : [num - 1 * mult];
   } else {
-    ans = posDir ? [num + 10] : [num - 10];
+    ans = posDir ? [num + 10 * mult] : [num - 10 * mult];
   }
-  if (aiGrid[ans].contents === 'ships' && aiGrid[ans].revealed) {
-    console.log('hee hee');
+  if (user.cells[ans[0]].contents === 'ship' && user.cells[ans[0]].revealed) {
+    mult++;
+    return nextInDirection(mult);
   }
   return ans.filter(x => x >= 0 && x < 100 && !user.cells[x].revealed);
 }
@@ -572,7 +618,16 @@ function displayMessageBanner(message) {
   }, 1600);
 }
 
-function displayWinner(winner) {}
+function displayWinner(winner) {
+  winnerBanner.classList.add('showing');
+  let text = '';
+  if (winner === 'user') {
+    text = 'YOU WIN!';
+  } else {
+    text = 'COMPUTER WINS!';
+  }
+  winnerBanner.childNodes[1].textContent = text;
+}
 
 /*----------- TURN CONTROLLER -------*/
 
@@ -596,40 +651,58 @@ function endAiTurn() {
 /*--------- ANIMATIONS ---------*/
 
 function aiAnimateShots() {
+  if (user.hp < 1) {
+    return displayWinner('computer');
+  }
   if (ai.shots.length <= 0) return setTimeout(endAiTurn, 1000);
   setTimeout(() => {
     let where = userGrid[ai.shots[0]];
     let whereElse = menuGrid[ai.shots[0]];
-    let piece = document.createElement('div');
     let menuPiece = document.createElement('div');
-    let explosion = document.createElement('img');
-    let smoke = document.createElement('img');
-    smoke.src = 'assets/explosions/smoke-02.gif';
-    explosion.src = 'assets/explosions/transparent-explosions-animated-gif-1.gif';
-    smoke.className = 'explosion smoke';
-    explosion.className = 'explosion';
     let clss = ai.shots.length === 1 ? 'miss' : 'hit';
-    piece.classList.add(clss);
     menuPiece.classList.add(clss);
-    where.appendChild(piece);
     whereElse.appendChild(menuPiece);
     if (clss === 'hit') {
-      where.appendChild(explosion);
-      where.appendChild(smoke);
-      playSound('explosion', explosionPlayer);
+      user.hp--;
+      hit(where);
+      explosion(where);
+      smoke(where);
     } else {
-      playSound('splash', splashPlayer);
+      banana(where);
     }
-    setTimeout(() => explosion.classList.add('fade-out'), 600);
-    // if (ai.shots.length === 3 || ai.shots.length === 6) {
-    //   setTimeout(() => {
-    //     console.log(ai.shots);
-    //     flyBy(ai.shots[0]);
-    //   }, 500);
-    // }
     ai.shots.shift();
     return aiAnimateShots();
   }, 500);
+}
+
+function hit(where) {
+  let piece = document.createElement('div');
+  piece.className = 'darken';
+  where.appendChild(piece);
+}
+
+function banana(where) {
+  let piece = document.createElement('img');
+  piece.className = 'banana-peel';
+  piece.src = 'assets/banana-peel-01.png';
+  where.appendChild(piece);
+  playSound('splat', splashPlayer);
+}
+
+function smoke(where) {
+  let smoke = document.createElement('img');
+  smoke.src = 'assets/explosions/smoke-02.gif';
+  smoke.className = 'smoke';
+  where.appendChild(smoke);
+}
+
+function explosion(where) {
+  let explosion = document.createElement('img');
+  explosion.src = 'assets/explosions/transparent-explosions-animated-gif-1.gif';
+  explosion.className = 'explosion';
+  where.appendChild(explosion);
+  playSound('explosion', explosionPlayer);
+  setTimeout(() => explosion.classList.add('fade-out'), 600);
 }
 
 function flyBy(cell) {
@@ -667,6 +740,21 @@ function playSound(name, source) {
 function toggleMenu() {
   menu.classList.toggle('visible');
   menuBtn.classList.toggle('visible');
+}
+
+/*----------- FOR PRESENTATION ---------*/
+
+function showEnemy() {
+  aiGrid.forEach((cell, i) => {
+    if (ai.cells[i].contents === 'ship') {
+      cell.style.backgroundColor = 'red';
+    }
+  });
+}
+
+function displayEnemySpread() {
+  toggle();
+  showEnemy();
 }
 
 /*-------- ON START ------*/

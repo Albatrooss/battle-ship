@@ -3,6 +3,7 @@
 * {
     margin: 0;
     box-sizing: border-box;
+    font-family: 'Sorts Mill Groudy', sans-serif;
 }
 body {
     min-height: 100vh;
@@ -39,7 +40,7 @@ body > h2 {
     color: #555;
     text-align: center;
     margin: 20px 0 0 0;
-    font-family: 'Sorts Mill Goudy', erif;
+    font-family: 'Sorts Mill Groudy', serif;
 }
 
 main {
@@ -58,6 +59,10 @@ main {
     height: 100vw;
     background-color: #fff;
     padding: 10px;
+}
+.menu-game-view {
+    max-width: 80vh;
+    max-height: 80vh;
 }
 .user-board,
 .ai-board,
@@ -79,7 +84,6 @@ main {
 }
 
 /*------- CELLS ---------*/
-
 .cell {
     background-color: skyblue;
     height: 100%;
@@ -89,16 +93,31 @@ main {
     align-items: center;
     position: relative;
 }
+.cell img.banana-peel {
+    position: absolute;
+    width: 80%;
+    height: 80%;
+    z-index: 2;
+}
+.cell img.hit {
+    display: none;
+}
+.cell img.player-hit {
+    padding-left: 2px;
+    width: 80%;
+    height: 80%;
+}
+
 .ai-hover {
-    background-color: salmon;
+    background-color: rgb(117, 183, 209);
     cursor: pointer;
 }
 .hit,
 .miss {
     position: absolute;
     z-index: 2;
-    width: 50%;
-    height: 50%;
+    width: 40%;
+    height: 40%;
     border-radius: 50%;
     border: 1px solid #333;
     background-color: red;
@@ -114,6 +133,13 @@ main {
 }
 .hoveredRed {
     background-color: coral;
+}
+
+.darken {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, .2);
 }
 
 /*------- SHIPS --------*/
@@ -162,7 +188,7 @@ main {
     background-color: rgba(122, 134, 133, 0.75);
     color: #fff;
     box-shadow: 0 0 10px rgba(0, 0, 0, .75);
-    font-size: 10vh;
+    font-size: 5vh;
     width: 76vw;
     height: 30vh;
     position: absolute;
@@ -173,6 +199,7 @@ main {
     display: flex;
     justify-content: center;
     align-items: center;
+    text-align: center;
 }
 #message.showing {
     left: 12vw;
@@ -188,8 +215,7 @@ main {
     position: absolute;
     width: 80vw;
     height: 75vh;
-    background-color: purple;
-    top: -75vh;
+    top: -100vh;
     left: 50%;
     margin-left: -40vw;
     display: flex;
@@ -198,8 +224,20 @@ main {
 }
 
 #winner-banner.showing {
-    top: 0;
+    top: -20vh;
     transition: top 1.5s ease-out;
+}
+
+#winner-banner img {
+    width: 100%;
+    position: absolute;
+    z-index: 19;
+}
+#winner-banner h2 {
+    color: #fff;
+    text-align: center;
+    font-size: 6vh;
+    z-index: 20;
 }
 
 /*------- EFFECTS ANIMATION -------*/
@@ -233,9 +271,10 @@ main {
     z-index: 5;
 }
 .cell .smoke {
+    position: absolute;
+    bottom: 4%;
     width: 400%;
     opacity: 1;
-    top: -93px;
     z-index: 4;
 }
 .fade-out {
@@ -261,6 +300,10 @@ footer {
     height: 100vh;
     transition: left .5s ease-in-out;
     z-index: 19;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
 }
 #menu.visible {
     left: 0vw;
@@ -268,30 +311,33 @@ footer {
 }
 #menu h2 {
     border-radius: 5px;
-    padding-left: 5vw;
-    padding-right: 1vw;
+    padding-left: 17px;
+    padding-right: 10px;
     background-color: rgba(0, 0, 0, .2);
     position: absolute;
-    right: -6vw;
+    right: -40px;
     color: #fff;
     cursor: pointer;
     z-index: 20;
 }
 #menu h2.visible {
-    right: -4vw;
+    right: -10px;
     transform: scaleX(-1);
     -webkit-transform: scaleX(-1);
     -moz-transform: scaleX(-1);
 }
 
 #menu h3 {
-    margin-top: 15vh;
-    padding-top: 1vh;
-    height: 4vh;
+    color: #777;
     text-align: center;
-    background-color: white;
+    padding-top: 8px;
+    height: 4vh;
+    background-color: #fff;
+    width: 100%;
+    max-width: 80vh;
+    margin: 5vh 0 5px 0;
+    border-radius: 5px 5px 0 0;
 }
-
 /*-------MEDIA ---------*/
 
 @media only screen and (min-width: 800px) {
@@ -299,11 +345,26 @@ footer {
         /* background-color: salmon; */
         align-items: center;
     }
+    .ui-before {
+        display: block;
+        width: 10vw;
+        height: 10vh;
+    }
     .game-view {
         width: 80vh;
         height: 80vh;
         border-radius: 5px;
         /* padding: 1vh; */
+    }
+    .ui-after {
+        width: 10vw;
+        display: flex;
+        justify-content: space-around;
+    }
+    .ui-game-view {
+        width: 10vw;
+        height: 10vw;
+        background-color: #fff;
     }
     .user-board,
     .ai-board {
@@ -314,17 +375,15 @@ footer {
         margin-left: -25vw;
     }
     #message {
-        width: 50vw;
-        left: -50vw;
+        width: 66vw;
+        left: -66vw;
+        text-align: center;
     }
     #message.showing {
-        left: 25vw;
+        left: 17.5vw;
     }
     #message.out {
         left: 100vw;
         transition: left .5s ease-in;
-    }
-    #menu {
-        display: none;
     }
 }
