@@ -3,33 +3,21 @@
 const ships = [
   {
     size: 5,
-    horizontal: true,
-    img: '',
   },
   {
     size: 4,
-    horizontal: true,
-    img: '',
   },
   {
     size: 3,
-    horizontal: true,
-    img: '',
   },
   {
     size: 3,
-    horizontal: true,
-    img: '',
   },
   {
     size: 2,
-    horizontal: true,
-    img: '',
   },
   {
     size: 2,
-    horizontal: true,
-    img: '',
   },
 ];
 
@@ -38,13 +26,24 @@ const sounds = {
   explosion: 'assets/sounds/explosion-02.wav',
   splat: 'assets/sounds/wet-splat.wav',
   splash: 'assets/sounds/splash.wav',
-  click: 'assets/sounds/click-01.wav',
+  boatDrop: 'assets/sounds/boat-drop-01.wav',
+  click: 'assets/sounds/click-02.wav',
+};
+
+const images = {
+  target: 'assets/target-01.svg',
+  banana: 'assets/banana-peel-01.png',
+  jet: 'assets/Jet01.png',
+  explosion: 'assets/explosions/transparent-explosions-animated-gif-1.gif',
+  buoy: 'assets/buoy-02.gif',
+  smoke: 'assets/explosions/smoke-02.gif',
 };
 
 const audioPlayer = new Audio();
 const explosionPlayer = new Audio();
-explosionPlayer.volume = 0.5;
 const splashPlayer = new Audio();
+
+explosionPlayer.volume = 0.4;
 
 /*--------- APP STATE ---------*/
 
@@ -57,11 +56,13 @@ let ai = {};
 const userBoard = document.querySelector('.user-board');
 const aiBoard = document.querySelector('.ai-board');
 const menuBoard = document.querySelector('.menu-board');
+
 const mainEl = document.querySelector('main');
 const boardMsg = document.querySelector('body > h2');
-const messageBanner = document.getElementById('message');
+
 const menu = document.getElementById('menu');
-const menuBtn = document.querySelector('#menu h2');
+
+const messageBanner = document.getElementById('message');
 const winnerBanner = document.querySelector('#winner-banner');
 const newGameBtn = document.querySelector('#winner-banner button');
 
@@ -69,18 +70,18 @@ let userGrid = [];
 let aiGrid = [];
 let menuGrid = [];
 
-const flipBtn = document.getElementById('horizontal-btn');
-const toggleBtn = document.getElementById('toggle');
+const menuBtn = document.querySelector('#menu h2');
 const aiBtn = document.getElementById('fire-btn');
 
 const jet = document.querySelector('.jet');
 
 /*--------- EVENT LISTENERS ---------*/
+
 menuBtn.addEventListener('click', toggleMenu);
+aiBtn.addEventListener('click', handleFireBtn);
 
 userBoard.addEventListener('click', prePlacePiece);
 aiBoard.addEventListener('click', selectCell);
-aiBtn.addEventListener('click', handleFireBtn);
 newGameBtn.addEventListener('click', newGame);
 
 window.addEventListener('keydown', rotatePiece);
@@ -321,6 +322,7 @@ function placePiece(cell) {
       menuGrid[cell].appendChild(menuShip);
       user.cells[cell].contents = 'ship';
     });
+    playSound('boatDrop', explosionPlayer);
     user.ships.shift();
     if (user.ships.length === 0) {
       startGame();
@@ -367,8 +369,9 @@ function selectCell(e) {
   if (!cell.classList.value.split(' ').includes('cell')) return;
   if (!game.mobile) return fire(cell.id);
   let targetEl = document.createElement('img');
-  targetEl.src = 'assets/target-01.svg';
+  targetEl.src = images.target;
   targetEl.id = 'cross-hairs';
+  playSound('click', splashPlayer);
   let oldTarget = document.getElementById('cross-hairs');
   if (user.cellSelected >= 0 && oldTarget !== null)
     aiGrid[user.cellSelected].removeChild(oldTarget);
@@ -411,10 +414,10 @@ function renderAiCell(cell, clss) {
   piece.className = clss;
   aiGrid[cell].appendChild(piece);
   if (clss === 'banana-peel') {
-    piece.src = 'assets/banana-peel-01.png';
+    piece.src = images.banana;
     playSound('splat', splashPlayer);
   } else {
-    piece.src = 'assets/buoy-02.gif';
+    piece.src = images.buoy;
     explosion(aiGrid[cell]);
   }
 }
@@ -483,11 +486,6 @@ function checkTaken(cs, who) {
     return true;
   }
   return false;
-}
-
-function changeHorizontal() {
-  //changes if the current piece is horizontal or not
-  pieces[0].horizontal ? (pieces[0].horizontal = false) : (pieces[0].horizontal = true);
 }
 
 function aiFire(e) {
@@ -689,21 +687,21 @@ function hit(where) {
 function banana(where) {
   let piece = document.createElement('img');
   piece.className = 'banana-peel';
-  piece.src = 'assets/banana-peel-01.png';
+  piece.src = images.banana;
   where.appendChild(piece);
   playSound('splat', splashPlayer);
 }
 
 function smoke(where) {
   let smoke = document.createElement('img');
-  smoke.src = 'assets/explosions/smoke-02.gif';
+  smoke.src = images.smoke;
   smoke.className = 'smoke';
   where.appendChild(smoke);
 }
 
 function explosion(where) {
   let explosion = document.createElement('img');
-  explosion.src = 'assets/explosions/transparent-explosions-animated-gif-1.gif';
+  explosion.src = images.explosion;
   explosion.className = 'explosion';
   where.appendChild(explosion);
   playSound('explosion', explosionPlayer);
@@ -714,7 +712,7 @@ function flyBy(cell) {
   playSound('jet', audioPlayer);
   let jet = document.createElement('img');
   jet.className = 'jet';
-  jet.src = 'assets/Jet01.png';
+  jet.src = images.jet;
   let top = 0;
   let row = Math.floor(cell / 10);
   if (row < 2) {

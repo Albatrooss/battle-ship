@@ -37,8 +37,11 @@ Spread out your ships, and sink the enemies ships before they get yours!!
 
 ## Next Steps
 
+* Remove wrapping ship placement
+
 * add multiple difficulty levels for the AI
 
 * update some of the animations
 
 * polish the art assets
+

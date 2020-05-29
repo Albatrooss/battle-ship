@@ -215,7 +215,7 @@ main {
     position: absolute;
     width: 80vw;
     height: 75vh;
-    top: -100vh;
+    top: -150vh;
     left: 50%;
     margin-left: -40vw;
     display: flex;
