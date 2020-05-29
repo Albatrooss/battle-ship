@@ -32,7 +32,7 @@ const sounds = {
 
 const images = {
   target: 'assets/target-01.svg',
-  banana: 'assets/banana-peel-01.png',
+  banana: 'assets/banana-dance-01.gif',
   jet: 'assets/Jet01.png',
   explosion: 'assets/explosions/transparent-explosions-animated-gif-1.gif',
   buoy: 'assets/buoy-02.gif',
