@@ -63,6 +63,7 @@ const messageBanner = document.getElementById('message');
 const menu = document.getElementById('menu');
 const menuBtn = document.querySelector('#menu h2');
 const winnerBanner = document.querySelector('#winner-banner');
+const newGameBtn = document.querySelector('#winner-banner button');
 
 let userGrid = [];
 let aiGrid = [];
@@ -80,6 +81,7 @@ menuBtn.addEventListener('click', toggleMenu);
 userBoard.addEventListener('click', prePlacePiece);
 aiBoard.addEventListener('click', selectCell);
 aiBtn.addEventListener('click', handleFireBtn);
+newGameBtn.addEventListener('click', newGame);
 
 window.addEventListener('keydown', rotatePiece);
 
@@ -188,6 +190,7 @@ function newGame() {
   clearBoard(menuBoard);
   clearBoard(aiBoard);
   initGame();
+  winnerBanner.classList.remove('showing');
   userBoard.classList.remove('hidden');
   aiBoard.classList.add('hidden');
   boardMsg.textContent = "USER'S BOARD";
@@ -572,7 +575,7 @@ function detectOrientation(cell) {
 }
 
 function nextInDirection(mult = 1) {
-  let ans = [];
+  let ans = -1;
   let num = ai.firstDir ? ai.hits[ai.hits.length - 1] : ai.hits[0];
   let posDir = ai.firstDir ? ai.startPostv : !ai.startPostv;
 
@@ -581,11 +584,12 @@ function nextInDirection(mult = 1) {
   } else {
     ans = posDir ? [num + 10 * mult] : [num - 10 * mult];
   }
+  if (ans[0] < 0) return [];
   if (user.cells[ans[0]].contents === 'ship' && user.cells[ans[0]].revealed) {
     mult++;
     return nextInDirection(mult);
   }
-  return ans.filter(x => x >= 0 && x < 100 && !user.cells[x].revealed);
+  return ans.filter(x => x >= 0 && x < 100 && !user.cells[x].reveal);
 }
 
 function adjacent(firstHit) {
@@ -627,6 +631,7 @@ function displayWinner(winner) {
     text = 'COMPUTER WINS!';
   }
   winnerBanner.childNodes[1].textContent = text;
+  setTimeout(() => newGameBtn.classList.add('visible'), 2000);
 }
 
 /*----------- TURN CONTROLLER -------*/
@@ -747,7 +752,7 @@ function toggleMenu() {
 function showEnemy() {
   aiGrid.forEach((cell, i) => {
     if (ai.cells[i].contents === 'ship') {
-      cell.style.backgroundColor = 'red';
+      cell.style.backgroundColor = 'rgb(114, 179, 204)';
     }
   });
 }
