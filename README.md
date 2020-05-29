@@ -1,4 +1,4 @@
-# Project 1 <br> BananaBoats
+# Project 1 <br> BattleShip
 
 ## Overview
 
@@ -8,6 +8,12 @@ This is a game I made for my first project of <strong>General Assembly</strong>'
 
 ## Screenshots
 
+![First screenshot](/assets/screenshot-01.png)
+
+![Second screenshot](/assets/screenshot-02.png)
+
+![Third screenshot](/assets/screenshot-03.png)
+
 ---
 
 ## Technologies used
@@ -15,7 +21,7 @@ This is a game I made for my first project of <strong>General Assembly</strong>'
 * Javascript
 * HTML
 * CSS
- 
+* Adobe Illustrator
 
 ---
 
@@ -31,3 +37,8 @@ Spread out your ships, and sink the enemies ships before they get yours!!
 
 ## Next Steps
 
+* add multiple difficulty levels for the AI
+
+* update some of the animations
+
+* polish the art assets
