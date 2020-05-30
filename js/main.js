@@ -32,17 +32,19 @@ const sounds = {
 
 const images = {
   target: 'assets/target-01.svg',
-  banana: 'assets/banana-dance-01.gif',
+  banana: 'assets/gifs/banana-dance-01.gif',
   jet: 'assets/Jet01.png',
   explosion: 'assets/explosions/transparent-explosions-animated-gif-1.gif',
-  buoy: 'assets/buoy-02.gif',
+  buoy: 'assets/gifs/buoy-02.gif',
   smoke: 'assets/explosions/smoke-02.gif',
 };
 
 const audioPlayer = new Audio();
 const explosionPlayer = new Audio();
+const shipPlayer = new Audio();
 const splashPlayer = new Audio();
 
+shipPlayer.volume = 0.4;
 explosionPlayer.volume = 0.4;
 
 /*--------- APP STATE ---------*/
@@ -102,9 +104,10 @@ function initGame() {
     horizontal: true,
     hovered: [],
     hovering: false,
-    taken: '',
+    notValid: '',
     cellSelected: -1,
     hp: 19,
+    toggleSound: true,
   };
   ai = {
     cells: [],
@@ -156,23 +159,6 @@ function initBoard(obj) {
   }
 }
 
-function renderGrid(grid) {
-  grid.forEach((cell, i) => {
-    let piece = document.createElement('div');
-    if (grid === aiGrid) {
-      if (ai.cells[i].contents !== null) {
-        piece.className = ai.cells[i].contents;
-        cell.appendChild(piece);
-      }
-    } else {
-      if (user.cells[i] !== null) {
-        piece.className = ai.cells[i].contents;
-        cell.appendChild(piece);
-      }
-    }
-  });
-}
-
 function startGame() {
   aiBtn.textContent = 'FIRE';
   displayMessageBanner('YOUR TURN!');
@@ -183,7 +169,7 @@ function startGame() {
   if (!game.mobile) {
     aiBtn.style.display = 'none';
   }
-  toggle();
+  toggleBoards();
 }
 
 function newGame() {
@@ -210,7 +196,7 @@ function clearBoard(board) {
 
 /*--------- HANDLE EVENTS ---------*/
 
-function toggle(e) {
+function toggleBoards(e) {
   userBoard.classList.toggle('hidden');
   aiBoard.classList.toggle('hidden');
   boardMsg.textContent =
@@ -223,14 +209,14 @@ function mouseEnter(root) {
   if (game.mobile || !game.myTurn) return;
   if (user.horizontal) {
     for (let i = 0; i < user.ships[0].size; i++) {
-      user.hovered.push(root + i);
+      user.hovered.push(root + i); // detects the size of the ship and pushes that many cells to a hovered aray
     }
   } else {
     for (let i = 0; i < user.ships[0].size; i++) {
       user.hovered.push(root + i * 10);
     }
   }
-  user.taken = checkTaken(user.hovered, user) ? 'hoveredRed' : 'hoveredGreen';
+  user.notValid = checkValid(user.hovered, user) ? 'hoveredGreen' : 'hoveredRed';
   renderUserCells(user.hovered);
   user.hovering = true;
 }
@@ -288,7 +274,7 @@ function prePlacePiece(e) {
           user.hovered.push(parseInt(e.target.id) + i * 10);
         }
       }
-      user.taken = checkTaken(user.hovered, user) ? 'hoveredRed' : 'hoveredGreen';
+      user.notValid = checkValid(user.hovered, user) ? 'hoveredGreen' : 'hoveredRed';
       renderUserCells(user.hovered);
     }
   } else {
@@ -299,7 +285,7 @@ function prePlacePiece(e) {
 function placePiece(cell) {
   //updates userGrid to show where the pieces are
   //store the size of the ship in each cell
-  if (user.taken === 'hoveredGreen' && user.hovered.length > 0) {
+  if (user.notValid === 'hoveredGreen' && user.hovered.length > 0) {
     user.hovered.forEach((cell, i) => {
       let ship = document.createElement('img');
       let menuShip = document.createElement('img');
@@ -322,7 +308,14 @@ function placePiece(cell) {
       menuGrid[cell].appendChild(menuShip);
       user.cells[cell].contents = 'ship';
     });
-    playSound('boatDrop', explosionPlayer);
+    if (user.toggleSound) {
+      //  uses differenct player to minimize cutting off previous sounds
+      playSound('boatDrop', explosionPlayer);
+      user.toggleSound = false;
+    } else {
+      playSound('boatDrop', splashPlayer);
+      user.toggleSound = true;
+    }
     user.ships.shift();
     if (user.ships.length === 0) {
       startGame();
@@ -336,27 +329,49 @@ function placePiece(cell) {
 }
 
 function renderUserCells(cells) {
-  let newCells = cells.filter(c => c < 100);
+  let root = cells[0];
+  let newCells = cells.filter(c => findCross(root).includes(c));
   if (newCells.length !== cells.length) {
-    user.taken = 'hoveredRed';
+    user.notValid = 'hoveredRed';
   }
   newCells.forEach(cell => {
-    userGrid[cell].classList.add(user.taken);
+    userGrid[cell].classList.add(user.notValid);
   });
+}
+
+function findCross(root) {
+  //Finds all the cells aligned horizontally and vertically from the root cell
+  let cross = [root];
+  for (let i = 1; i < 10; i++) {
+    let news = [];
+    let r = root + i;
+    if (Math.floor(r / 10) === Math.floor(root / 10)) news.push(r);
+    let l = root - i;
+    if (Math.floor(l / 10) === Math.floor(root / 10)) news.push(l);
+    let u = root + i * 10;
+    if (u % 10 === root % 10) news.push(u);
+    let d = root - i * 10;
+    if (d % 10 === root % 10) news.push(d);
+    news.forEach(x => {
+      if (x < 100 && x >= 0) cross.push(x);
+    });
+  }
+  return cross;
 }
 
 function rotatePiece(e) {
   if (e.key === ' ' && !game.mobile && user.hovering) {
     user.horizontal = user.horizontal ? false : true;
     let root = user.hovered[0];
-    mouseLeave();
-    mouseEnter(root);
+    mouseLeave(); //removes old hovered
+    mouseEnter(root); //shows new hovered
   }
 }
 
 /*--------- USER FUNCTIONS ---------*/
 
 function handleFireBtn(e) {
+  //tells the button what to do dependant on wethere its mobile or not
   if (user.ships.length > 0) {
     placePiece(user.cellSelected);
   } else {
@@ -365,6 +380,7 @@ function handleFireBtn(e) {
 }
 
 function selectCell(e) {
+  // for mobile, select the cell you will fire on
   let cell = e.target;
   if (!cell.classList.value.split(' ').includes('cell')) return;
   if (!game.mobile) return fire(cell.id);
@@ -386,7 +402,7 @@ function fire(cell) {
   }
 
   let oldTarget = document.getElementById('cross-hairs');
-  if (user.cellSelected >= 0) aiGrid[user.cellSelected].removeChild(oldTarget);
+  if (user.cellSelected >= 0) aiGrid[user.cellSelected].removeChild(oldTarget); // removes the last crosshair placed
 
   let id = cell;
   if (!ai.cells[id].revealed) {
@@ -422,37 +438,24 @@ function renderAiCell(cell, clss) {
   }
 }
 
-function showAi() {
-  ai.cells.forEach((cell, i) => {
-    if (cell.contents === 'ship') {
-      let piece = document.createElement('div');
-      piece.classList.add('ship');
-      aiGrid[i].appendChild(piece);
-    }
-  });
-}
-
-/*--------- AI FUNCTIONS ---------*/
+/*---------------------------- AI FUNCTIONS ----------------------------*/
 
 function aiPlaceShips() {
   //randomly places ai pieces
   ai.ships.forEach((ship, index) => {
     let cells = [];
-    cells = randomRoot(ship);
-    let taken = checkTaken(cells, ai);
-    while (taken) {
-      cells = randomRoot(ship);
-      taken = checkTaken(cells, ai);
+    cells = randomShip(ship);
+    let valid = checkValid(cells, ai);
+    while (!valid) {
+      cells = randomShip(ship);
+      valid = checkValid(cells, ai);
     }
     cells.forEach(c => {
-      if (ai.cells[c].contents === null) {
-        cells.forEach(c => {
-          ai.cells[c].contents = 'ship';
-        });
-      }
+      ai.cells[c].contents = 'ship';
     });
   });
-  function randomRoot(s) {
+
+  function randomShip(s) {
     let temp = [];
     let horizontal = Math.floor(Math.random() * 2);
     let root = Math.floor(Math.random() * 100);
@@ -469,23 +472,17 @@ function aiPlaceShips() {
   }
 }
 
-function checkTaken(cs, who) {
-  let noGood = false;
-  if (
-    cs[0] % 10 !== cs[cs.length - 1] % 10 &&
-    Math.floor(cs[0] / 10) !== Math.floor(cs[cs.length - 1] / 10)
-  ) {
-    noGood = true;
+function checkValid(cs, who) {
+  let valid = true;
+  if (!findCross(cs[0]).includes(cs[cs.length - 1])) {
+    valid = false;
   }
   cs.forEach(c => {
     if (c > 99 || who.cells[c].contents !== null) {
-      noGood = true;
+      valid = false;
     }
   });
-  if (noGood) {
-    return true;
-  }
-  return false;
+  return valid;
 }
 
 function aiFire(e) {
@@ -498,16 +495,18 @@ function aiFire(e) {
 
   user.cells[cell].revealed = true;
   ai.shots.push(cell);
+
   if (user.cells[cell].contents === 'ship') {
     if (ai.firstDir) {
+      //pushes hit cell to either the front or the back of the line
       ai.hits.push(cell);
     } else {
       ai.hits.unshift(cell);
     }
-    aiFire();
+    aiFire(); //recursively keeps firing untill it misses
   } else {
     if (ai.hits.length > 1) {
-      ai.firstDir = false;
+      ai.firstDir = false; //if it has allready detected the orientation, tells itself to search the opposite direction next time
     }
     flyBy(ai.shots[0]);
     setTimeout(() => aiAnimateShots(cell), 1000);
@@ -518,9 +517,12 @@ function aiFire(e) {
 function aiPickTarget() {
   let options = [];
   if (ai.hits.length === 0) {
+    //if it doesn't know where any hits are, fire randomly
     return randomCell();
   } else if (ai.hits.length === 1) {
+    // found the root, fires up, down, left and right until it determines the orientation of the shnip
     options = adjacent(ai.hits[0]);
+    console.log(options);
     if (options.length > 0) {
       let cell = options[Math.floor(Math.random() * options.length)];
       detectOrientation(cell);
@@ -531,6 +533,7 @@ function aiPickTarget() {
       return randomCell();
     }
   } else {
+    //fires in the same direction untill a miss, then turns and fires the other way untill it misses again;
     options = nextInDirection();
     if (options.length === 0 || user.cells[options[0]].revealed) {
       if (ai.firstDir) {
@@ -587,25 +590,14 @@ function nextInDirection(mult = 1) {
     mult++;
     return nextInDirection(mult);
   }
-  return ans.filter(x => x >= 0 && x < 100 && !user.cells[x].reveal);
+  return ans.filter(x => findCross(num).includes(x) && !user.cells[x].reveal);
 }
 
 function adjacent(firstHit) {
-  let temp = [firstHit + 1, firstHit - 1, firstHit + 10, firstHit - 10];
-  let ans = [];
-
-  temp.forEach((x, i) => {
-    if (i < 2) {
-      if (Math.floor(x / 10) === Math.floor(firstHit / 10)) {
-        ans.push(x);
-      }
-    } else {
-      if (x % 10 === firstHit % 10) {
-        ans.push(x);
-      }
-    }
-  });
-  return ans.filter(x => x >= 0 && x < 100 && !user.cells[x].revealed);
+  return [firstHit + 1, firstHit - 1, firstHit + 10, firstHit - 10].filter(
+    // finds up, down, left and right in play that havent been fired on yet
+    x => findCross(firstHit).includes(x) && !user.cells[x].reveal
+  );
 }
 
 /*-----------  MESSAGES -----------*/
@@ -636,19 +628,15 @@ function displayWinner(winner) {
 
 function startAiTurn() {
   // displayMessageBanner("COMPUTER's TURN!");
-  toggle();
+  toggleBoards();
   game.aiTurn = true;
   aiFire();
-}
-
-function aiMove() {
-  aiLoopTest(19);
 }
 
 function endAiTurn() {
   game.myTurn = true;
   displayMessageBanner('YOUR TURN!');
-  toggle();
+  toggleBoards();
 }
 
 /*--------- ANIMATIONS ---------*/
@@ -657,7 +645,7 @@ function aiAnimateShots() {
   if (user.hp < 1) {
     return displayWinner('computer');
   }
-  if (ai.shots.length <= 0) return setTimeout(endAiTurn, 1000);
+  if (ai.shots.length <= 0) return setTimeout(endAiTurn, 1000); //loops through ai shots and fires them in sequenc.
   setTimeout(() => {
     let where = userGrid[ai.shots[0]];
     let whereElse = menuGrid[ai.shots[0]];
@@ -756,7 +744,7 @@ function showEnemy() {
 }
 
 function displayEnemySpread() {
-  toggle();
+  toggleBoards();
   showEnemy();
 }
 
